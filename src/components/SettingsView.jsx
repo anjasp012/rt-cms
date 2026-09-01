@@ -5,15 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { 
-  Sliders, 
-  Monitor, 
-  Database, 
-  Copy, 
-  Check, 
-  Loader2, 
-  Play, 
-  Shield, 
+import {
+  Sliders,
+  Monitor,
+  Database,
+  Copy,
+  Check,
+  Loader2,
+  Play,
+  Shield,
   ExternalLink,
   Layers
 } from 'lucide-react'
@@ -32,7 +32,7 @@ export default function SettingsView({
   const [previewData, setPreviewData] = useState(null)
   const [testing, setTesting] = useState(false)
 
-  const endpointUrl = 'http://127.0.0.1:8000/api/v1/table/explore'
+  const endpointUrl = 'http://https://rt-api.gagasan.tech/api/api/v1/table/explore'
   const accessKey = 'research_table_local_secret_2026'
 
   useEffect(() => {
@@ -132,9 +132,9 @@ export default function SettingsView({
               </div>
 
               <div className="pt-2 flex items-center gap-2">
-                <Button 
-                  type="submit" 
-                  size="sm" 
+                <Button
+                  type="submit"
+                  size="sm"
                   disabled={saving || loadingSetting}
                   className="text-sm h-9 px-4 font-medium"
                 >

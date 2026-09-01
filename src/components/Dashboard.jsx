@@ -395,7 +395,7 @@ export default function Dashboard({ username, onLogout }) {
               )}
             </div>
             <div className="text-xs text-zinc-500 font-mono truncate">
-              http://127.0.0.1:8000
+              http://https://rt-api.gagasan.tech/api
             </div>
           </div>
 
@@ -464,7 +464,7 @@ export default function Dashboard({ username, onLogout }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open('http://127.0.0.1:8000/docs', '_blank')}
+              onClick={() => window.open('http://https://rt-api.gagasan.tech/api/docs', '_blank')}
               className="h-9 text-xs font-medium border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
             >
               <BookOpen className="w-3.5 h-3.5 mr-1.5 text-zinc-500 dark:text-zinc-400" />

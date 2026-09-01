@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://https://rt-api.gagasan.tech/api/api/v1';
 
 function getJwt() {
   return localStorage.getItem('rt_jwt');
@@ -72,7 +72,7 @@ async function request(url, options = {}) {
     try {
       const errJson = await res.json();
       errorDetail = errJson.detail?.responseMessage || errJson.detail || errJson.responseMessage || 'Terjadi kesalahan pada server';
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(errorDetail);
   }
 
@@ -83,7 +83,7 @@ export async function checkApiHealth() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch('http://127.0.0.1:8000/', { signal: controller.signal });
+    const res = await fetch('http://https://rt-api.gagasan.tech/api/', { signal: controller.signal });
     clearTimeout(timeoutId);
     return res.ok;
   } catch (err) {
@@ -102,7 +102,7 @@ export async function login(username, password) {
     try {
       const err = await res.json();
       msg = err.detail?.responseMessage || err.detail || msg;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(msg);
   }
   return res.json();
