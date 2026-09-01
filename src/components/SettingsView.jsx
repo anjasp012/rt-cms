@@ -32,7 +32,7 @@ export default function SettingsView({
   const [previewData, setPreviewData] = useState(null)
   const [testing, setTesting] = useState(false)
 
-  const endpointUrl = 'http://https://rt-api.gagasan.tech/api/api/v1/table/explore'
+  const endpointUrl = 'https://rt-api.gagasan.tech/api/v1/table/explore'
   const accessKey = 'research_table_local_secret_2026'
 
   useEffect(() => {

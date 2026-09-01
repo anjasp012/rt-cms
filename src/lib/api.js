@@ -1,4 +1,4 @@
-const API_BASE = 'http://https://rt-api.gagasan.tech/api/api/v1';
+const API_BASE = 'https://rt-api.gagasan.tech/api/v1';
 
 function getJwt() {
   return localStorage.getItem('rt_jwt');
@@ -83,7 +83,7 @@ export async function checkApiHealth() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch('http://https://rt-api.gagasan.tech/api/', { signal: controller.signal });
+    const res = await fetch('https://rt-api.gagasan.tech/', { signal: controller.signal });
     clearTimeout(timeoutId);
     return res.ok;
   } catch (err) {
