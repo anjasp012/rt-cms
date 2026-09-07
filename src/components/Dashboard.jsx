@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import InnovationsView from './InnovationsView'
+import InnovationFormView from './InnovationFormView'
 import ModuleManagementView from './ModuleManagementView'
 import ModuleUsageView from './ModuleUsageView'
 import SuggestionsTable from './SuggestionsTable'
@@ -48,6 +49,7 @@ import {
 export default function Dashboard({ username, onLogout }) {
   // Navigation: 'innovations' | 'modules' | 'usage' | 'suggestions' | 'settings'
   const [currentView, setCurrentView] = useState('innovations')
+  const [editingInnovation, setEditingInnovation] = useState(null)
 
   const [innovations, setInnovations] = useState([])
   const [selectedZone, setSelectedZone] = useState(null)
@@ -147,6 +149,8 @@ export default function Dashboard({ username, onLogout }) {
         await createInnovation(data)
         toast.success('Penelitian baru berhasil ditambahkan')
       }
+      setCurrentView('innovations')
+      setEditingInnovation(null)
       loadData(false)
     } catch (err) {
       toast.error(err.message || 'Gagal menyimpan data penelitian')
@@ -161,16 +165,6 @@ export default function Dashboard({ username, onLogout }) {
       loadData(false)
     } catch (err) {
       toast.error(err.message || 'Gagal menghapus penelitian')
-    }
-  }
-
-  const handleUpdateRelevance = async (id, mappings) => {
-    try {
-      await updateInnovationRelevance(id, mappings)
-      toast.success('Bobot relevansi persona berhasil diperbarui')
-      loadData(false)
-    } catch (err) {
-      toast.error(err.message || 'Gagal mengatur bobot relevansi')
     }
   }
 
@@ -371,33 +365,7 @@ export default function Dashboard({ username, onLogout }) {
 
         {/* Bottom Widgets */}
         <div>
-          {/* System & Connection Status Widget */}
-          <div className="p-3 mx-3 mb-3 rounded-md bg-zinc-100/70 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">API BACKEND</span>
-              {apiStatus === 'online' && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-mono font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  ONLINE
-                </span>
-              )}
-              {apiStatus === 'offline' && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-mono font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                  OFFLINE
-                </span>
-              )}
-              {apiStatus === 'checking' && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-mono font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                  CHECKING
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-zinc-500 font-mono truncate">
-              http://https://rt-api.gagasan.tech/api
-            </div>
-          </div>
+
 
           {/* User Profile & Logout Section */}
           <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950">
@@ -442,23 +410,7 @@ export default function Dashboard({ username, onLogout }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Auto-Sync Status Badge */}
-            <button
-              type="button"
-              onClick={() => {
-                const nextState = !autoSyncEnabled
-                setAutoSyncEnabled(nextState)
-                toast.info(nextState ? 'Sinkron otomatis diaktifkan' : 'Sinkron otomatis dijeda')
-              }}
-              title={autoSyncEnabled ? 'Sinkron Otomatis Aktif (Klik untuk menjeda)' : 'Sinkron Otomatis Dijeda (Klik untuk mengaktifkan)'}
-              className={`hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-mono border transition-colors ${autoSyncEnabled
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/60'
-                : 'bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-500 dark:border-zinc-800'
-                }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${autoSyncEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
-              <span>{autoSyncEnabled ? 'SINKRON OTOMATIS' : 'SINKRON DIJEDA'}</span>
-            </button>
+
 
             {/* Direct Swagger API Docs Button */}
             <Button
@@ -498,6 +450,25 @@ export default function Dashboard({ username, onLogout }) {
               onUpdateRelevance={handleUpdateRelevance}
               selectedZone={selectedZone}
               onSelectZone={setSelectedZone}
+              onNavigateToForm={(item) => {
+                setEditingInnovation(item)
+                setCurrentView('innovation-form')
+              }}
+            />
+          )}
+
+          {currentView === 'innovation-form' && (
+            <InnovationFormView
+              innovation={editingInnovation}
+              zones={zones}
+              personas={personas}
+              onSave={async (data) => {
+                await handleSaveInnovation(editingInnovation?.id, data)
+              }}
+              onCancel={() => {
+                setEditingInnovation(null)
+                setCurrentView('innovations')
+              }}
             />
           )}
 

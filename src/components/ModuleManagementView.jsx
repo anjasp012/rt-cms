@@ -57,6 +57,7 @@ export default function ModuleManagementView({
     name: '',
     slug: '',
     tagline: '',
+    icon_url: '',
     order_index: 1,
     is_active: true
   })
@@ -67,6 +68,7 @@ export default function ModuleManagementView({
     zone_number: 1,
     description: '',
     color_theme: '#3b82f6',
+    icon_url: '',
     is_active: true
   })
 
@@ -77,6 +79,7 @@ export default function ModuleManagementView({
         name: '',
         slug: '',
         tagline: '',
+        icon_url: '',
         order_index: personas.length + 1,
         is_active: true
       })
@@ -87,6 +90,7 @@ export default function ModuleManagementView({
         zone_number: zones.length + 1,
         description: '',
         color_theme: '#3b82f6',
+        icon_url: '',
         is_active: true
       })
     }
@@ -100,6 +104,7 @@ export default function ModuleManagementView({
         name: item.name || '',
         slug: item.slug || '',
         tagline: item.tagline || '',
+        icon_url: item.icon_url || '',
         order_index: item.order_index || 1,
         is_active: item.is_active ?? true
       })
@@ -110,6 +115,7 @@ export default function ModuleManagementView({
         zone_number: item.zone_number || 1,
         description: item.description || '',
         color_theme: item.color_theme || '#3b82f6',
+        icon_url: item.icon_url || '',
         is_active: item.is_active ?? true
       })
     }
@@ -215,9 +221,13 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                      #{p.order_index}
-                    </span>
+                    {p.icon_url ? (
+                      <img src={p.icon_url} alt="" className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" />
+                    ) : (
+                      <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5 text-zinc-400" />
+                      </div>
+                    )}
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
                       {p.name}
                     </span>
@@ -267,12 +277,16 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span 
-                      className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm"
-                      style={{ backgroundColor: z.color_theme || '#3b82f6' }}
-                    >
-                      {z.zone_number}
-                    </span>
+                    {z.icon_url ? (
+                      <img src={z.icon_url} alt="" className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" />
+                    ) : (
+                      <span 
+                        className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm"
+                        style={{ backgroundColor: z.color_theme || '#3b82f6' }}
+                      >
+                        {z.zone_number}
+                      </span>
+                    )}
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
                       Zona {z.zone_number}: {z.name}
                     </span>
@@ -356,27 +370,15 @@ export default function ModuleManagementView({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-mono text-zinc-500">Slug Identifier *</Label>
-                    <Input
-                      value={personaForm.slug}
-                      onChange={(e) => setPersonaForm({ ...personaForm, slug: e.target.value })}
-                      placeholder="petani"
-                      required
-                      className="h-9 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-mono text-zinc-500">Nomor Urut</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={personaForm.order_index}
-                      onChange={(e) => setPersonaForm({ ...personaForm, order_index: parseInt(e.target.value) || 1 })}
-                      className="h-9 text-xs font-mono"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">Slug Identifier *</Label>
+                  <Input
+                    value={personaForm.slug}
+                    onChange={(e) => setPersonaForm({ ...personaForm, slug: e.target.value })}
+                    placeholder="petani"
+                    required
+                    className="h-9 text-xs font-mono"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -387,6 +389,16 @@ export default function ModuleManagementView({
                     placeholder="Deskripsi singkat persona dan kebutuhan riset mereka..."
                     rows={3}
                     className="w-full text-xs p-2.5 rounded-md bg-white dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">URL Ikon / Thumbnail (Opsional)</Label>
+                  <Input
+                    value={personaForm.icon_url}
+                    onChange={(e) => setPersonaForm({ ...personaForm, icon_url: e.target.value })}
+                    placeholder="https://example.com/icon.png"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 
@@ -449,6 +461,16 @@ export default function ModuleManagementView({
                     placeholder="Penjelasan fokus dan target riset BRIN pada bidang ini..."
                     rows={3}
                     className="w-full text-xs p-2.5 rounded-md bg-white dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">URL Ikon / Thumbnail (Opsional)</Label>
+                  <Input
+                    value={zoneForm.icon_url}
+                    onChange={(e) => setZoneForm({ ...zoneForm, icon_url: e.target.value })}
+                    placeholder="https://example.com/icon.png"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 

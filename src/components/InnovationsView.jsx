@@ -13,7 +13,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import InnovationFormModal from './InnovationFormModal'
 import { 
   Lightbulb, 
   Plus, 
@@ -35,18 +34,15 @@ export default function InnovationsView({
   onDeleteInnovation,
   onUpdateRelevance,
   selectedZone,
-  onSelectZone
+  onSelectZone,
+  onNavigateToForm
 }) {
   const [search, setSearch] = useState('')
-  const [formModalOpen, setFormModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
 
-  const [relevanceModalOpen, setRelevanceModalOpen] = useState(false)
-  const [selectedInnovationForRel, setSelectedInnovationForRel] = useState(null)
-  const [relevanceWeights, setRelevanceWeights] = useState({})
-  const [savingRelevance, setSavingRelevance] = useState(false)
+
 
   const filtered = useMemo(() => {
     return innovations.filter(item => {
@@ -60,13 +56,11 @@ export default function InnovationsView({
   }, [innovations, search, selectedZone])
 
   const handleOpenAdd = () => {
-    setEditingItem(null)
-    setFormModalOpen(true)
+    onNavigateToForm(null)
   }
 
   const handleOpenEdit = (item) => {
-    setEditingItem(item)
-    setFormModalOpen(true)
+    onNavigateToForm(item)
   }
 
   const handleOpenDelete = (item) => {
@@ -82,30 +76,7 @@ export default function InnovationsView({
     setItemToDelete(null)
   }
 
-  const handleOpenRelevance = (item) => {
-    setSelectedInnovationForRel(item)
-    const initWeights = {}
-    personas.forEach(p => {
-      initWeights[p.id] = 50
-    })
-    setRelevanceWeights(initWeights)
-    setRelevanceModalOpen(true)
-  }
 
-  const handleSaveRelevance = async () => {
-    if (!selectedInnovationForRel) return
-    setSavingRelevance(true)
-    try {
-      const mappings = Object.entries(relevanceWeights).map(([pId, score]) => ({
-        persona_id: parseInt(pId),
-        relevance_score: parseInt(score),
-      }))
-      await onUpdateRelevance(selectedInnovationForRel.id, mappings)
-      setRelevanceModalOpen(false)
-    } finally {
-      setSavingRelevance(false)
-    }
-  }
 
   return (
     <div className="space-y-3.5 animate-fade-in">
@@ -155,6 +126,7 @@ export default function InnovationsView({
               <tr>
                 <th className="p-3 w-10 text-center">#</th>
                 <th className="p-3 text-left">Judul Inovasi & Kategori</th>
+                <th className="p-3 w-36 text-left">Modul Pengguna</th>
                 <th className="p-3 w-36 text-left">Zona Riset</th>
                 <th className="p-3 w-28 text-center">TRL Level</th>
                 <th className="p-3 text-left">Dampak Terapan</th>
@@ -197,6 +169,11 @@ export default function InnovationsView({
                     </td>
                     <td className="p-3">
                       <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                        {item.persona_name || `Modul ${item.persona_id}`}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-mono text-zinc-700 dark:text-zinc-300">
                         {item.zone?.name || `Zona ${item.zone_id}`}
                       </span>
                     </td>
@@ -212,13 +189,6 @@ export default function InnovationsView({
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenRelevance(item)}
-                          className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-                          title="Bobot Persona"
-                        >
-                          <Sliders className="w-3.5 h-3.5" />
-                        </button>
                         <button
                           onClick={() => handleOpenEdit(item)}
                           className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
@@ -243,92 +213,7 @@ export default function InnovationsView({
         </div>
       </Card>
 
-      {/* Innovation Form Modal */}
-      <InnovationFormModal
-        open={formModalOpen}
-        onOpenChange={setFormModalOpen}
-        innovation={editingItem}
-        zones={zones}
-        onSave={(data) => {
-          if (editingItem) {
-            return onSaveInnovation(editingItem.id, data)
-          } else {
-            return onSaveInnovation(null, data)
-          }
-        }}
-      />
 
-      {/* Persona Relevance Weight Modal */}
-      {relevanceModalOpen && selectedInnovationForRel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
-              <div>
-                <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-                  Bobot Prioritas Persona
-                </h3>
-                <span className="text-xs text-zinc-400 font-mono truncate max-w-[260px] block">
-                  {selectedInnovationForRel.title}
-                </span>
-              </div>
-              <button 
-                onClick={() => setRelevanceModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-200 text-sm font-semibold"
-              >
-                &times;
-              </button>
-            </div>
-
-            <p className="text-xs text-zinc-500">
-              Atur skor prioritas (1–100) per kelompok pengguna meja sentuh.
-            </p>
-
-            <div className="space-y-2 pt-1">
-              {personas.map(p => (
-                <div key={p.id} className="p-2.5 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-800 dark:text-zinc-200">{p.name}</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{relevanceWeights[p.id] || 50} pts</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={relevanceWeights[p.id] || 50}
-                    onChange={(e) => setRelevanceWeights({
-                      ...relevanceWeights,
-                      [p.id]: parseInt(e.target.value)
-                    })}
-                    className="w-full accent-zinc-900 dark:accent-zinc-100 cursor-pointer h-1 bg-zinc-200 dark:bg-zinc-800 rounded"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setRelevanceModalOpen(false)}
-                disabled={savingRelevance}
-                className="text-xs h-8"
-              >
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveRelevance}
-                disabled={savingRelevance}
-                className="text-xs h-8"
-              >
-                {savingRelevance ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
-                Simpan
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Alert Dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
