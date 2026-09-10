@@ -38,7 +38,7 @@ export default function LoginPage({ onLogin }) {
   return (
     <div className="min-h-screen w-full bg-zinc-50 dark:bg-[#09090b] flex flex-col justify-between text-zinc-900 dark:text-zinc-100 relative overflow-hidden transition-colors duration-200">
       {/* Background Subtle Tech Grid */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.04] dark:opacity-[0.08] pointer-events-none"
         style={{
           backgroundImage: `radial-gradient(#52525b 1px, transparent 1px)`,
@@ -57,9 +57,6 @@ export default function LoginPage({ onLogin }) {
             <div className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-100">
               Research Table BRIN
             </div>
-            <div className="text-[11px] text-zinc-500 font-mono">
-              Admin Console &bull; v1.0
-            </div>
           </div>
         </div>
 
@@ -77,15 +74,11 @@ export default function LoginPage({ onLogin }) {
         <Card className="w-full max-w-sm border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md shadow-xl rounded-xl">
           <CardContent className="p-7 space-y-6">
             <div className="space-y-1.5 text-center">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-xs font-mono mb-2">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Panel Otentikasi</span>
-              </div>
               <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Masuk ke Console
+                Login Admin
               </h1>
               <p className="text-xs text-zinc-500">
-                Gunakan kredensial admin untuk mengelola meja riset
+                Gunakan kredensial admin untuk mengelola Research Table
               </p>
             </div>
 

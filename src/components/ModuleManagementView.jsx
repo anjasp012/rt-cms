@@ -31,8 +31,11 @@ import {
   Loader2, 
   Layers,
   Palette,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react'
+import { uploadFile } from '@/lib/api'
+import { toast } from 'sonner'
 
 export default function ModuleManagementView({
   personas,
@@ -51,6 +54,7 @@ export default function ModuleManagementView({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Form states
   const [personaForm, setPersonaForm] = useState({
@@ -58,16 +62,13 @@ export default function ModuleManagementView({
     slug: '',
     tagline: '',
     icon_url: '',
-    order_index: 1,
     is_active: true
   })
 
   const [zoneForm, setZoneForm] = useState({
     name: '',
     slug: '',
-    zone_number: 1,
     description: '',
-    color_theme: '#3b82f6',
     icon_url: '',
     is_active: true
   })
@@ -80,16 +81,13 @@ export default function ModuleManagementView({
         slug: '',
         tagline: '',
         icon_url: '',
-        order_index: personas.length + 1,
         is_active: true
       })
     } else {
       setZoneForm({
         name: '',
         slug: '',
-        zone_number: zones.length + 1,
         description: '',
-        color_theme: '#3b82f6',
         icon_url: '',
         is_active: true
       })
@@ -105,16 +103,13 @@ export default function ModuleManagementView({
         slug: item.slug || '',
         tagline: item.tagline || '',
         icon_url: item.icon_url || '',
-        order_index: item.order_index || 1,
         is_active: item.is_active ?? true
       })
     } else {
       setZoneForm({
         name: item.name || '',
         slug: item.slug || '',
-        zone_number: item.zone_number || 1,
         description: item.description || '',
-        color_theme: item.color_theme || '#3b82f6',
         icon_url: item.icon_url || '',
         is_active: item.is_active ?? true
       })
@@ -163,6 +158,26 @@ export default function ModuleManagementView({
 
   const autoSlug = (val) => {
     return val.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')
+  }
+
+  const handleFileUpload = async (e, type) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    setUploadingImage(true)
+    try {
+      const res = await uploadFile(file)
+      if (type === 'persona') {
+        setPersonaForm(prev => ({ ...prev, icon_url: res.url }))
+      } else {
+        setZoneForm(prev => ({ ...prev, icon_url: res.url }))
+      }
+      toast.success('Ikon berhasil diunggah')
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengunggah ikon')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   return (
@@ -281,14 +296,13 @@ export default function ModuleManagementView({
                       <img src={z.icon_url} alt="" className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" />
                     ) : (
                       <span 
-                        className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm"
-                        style={{ backgroundColor: z.color_theme || '#3b82f6' }}
+                        className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm bg-blue-500"
                       >
-                        {z.zone_number}
+                        {z.name.charAt(0)}
                       </span>
                     )}
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                      Zona {z.zone_number}: {z.name}
+                      Zona {z.name}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -315,7 +329,7 @@ export default function ModuleManagementView({
 
                 <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-[11px] font-mono text-zinc-400">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: z.color_theme || '#3b82f6' }} />
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
                     <span>/{z.slug}</span>
                   </div>
                   <Badge variant={z.is_active ? 'approved' : 'rejected'}>
@@ -356,6 +370,36 @@ export default function ModuleManagementView({
             {activeTab === 'personas' ? (
               <>
                 <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={personaForm.icon_url}
+                      onChange={(e) => setPersonaForm({ ...personaForm, icon_url: e.target.value })}
+                      placeholder="URL gambar atau upload"
+                      className="h-9 text-xs font-mono flex-1"
+                    />
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'persona')}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploadingImage}
+                      />
+                      <Button type="button" variant="secondary" className="h-9 text-xs gap-1.5" disabled={uploadingImage}>
+                        {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                        Upload
+                      </Button>
+                    </div>
+                  </div>
+                  {personaForm.icon_url && (
+                    <div className="mt-2">
+                      <img src={personaForm.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${personaForm.icon_url}` : personaForm.icon_url} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
                   <Label className="text-xs font-mono text-zinc-500">Nama Modul Pengguna (Persona) *</Label>
                   <Input
                     value={personaForm.name}
@@ -392,15 +436,7 @@ export default function ModuleManagementView({
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-mono text-zinc-500">URL Ikon / Thumbnail (Opsional)</Label>
-                  <Input
-                    value={personaForm.icon_url}
-                    onChange={(e) => setPersonaForm({ ...personaForm, icon_url: e.target.value })}
-                    placeholder="https://example.com/icon.png"
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
+
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Modul Aktif</span>
@@ -414,6 +450,36 @@ export default function ModuleManagementView({
               </>
             ) : (
               <>
+                <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={zoneForm.icon_url}
+                      onChange={(e) => setZoneForm({ ...zoneForm, icon_url: e.target.value })}
+                      placeholder="URL gambar atau upload"
+                      className="h-9 text-xs font-mono flex-1"
+                    />
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'zone')}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploadingImage}
+                      />
+                      <Button type="button" variant="secondary" className="h-9 text-xs gap-1.5" disabled={uploadingImage}>
+                        {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                        Upload
+                      </Button>
+                    </div>
+                  </div>
+                  {zoneForm.icon_url && (
+                    <div className="mt-2">
+                      <img src={zoneForm.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${zoneForm.icon_url}` : zoneForm.icon_url} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-1">
                   <Label className="text-xs font-mono text-zinc-500">Nama Zona Riset *</Label>
                   <Input
@@ -429,28 +495,15 @@ export default function ModuleManagementView({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-mono text-zinc-500">Slug Identifier *</Label>
-                    <Input
-                      value={zoneForm.slug}
-                      onChange={(e) => setZoneForm({ ...zoneForm, slug: e.target.value })}
-                      placeholder="energi"
-                      required
-                      className="h-9 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-mono text-zinc-500">Nomor Zona (1-9)</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="9"
-                      value={zoneForm.zone_number}
-                      onChange={(e) => setZoneForm({ ...zoneForm, zone_number: parseInt(e.target.value) || 1 })}
-                      className="h-9 text-xs font-mono"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-mono text-zinc-500">Slug Identifier *</Label>
+                  <Input
+                    value={zoneForm.slug}
+                    onChange={(e) => setZoneForm({ ...zoneForm, slug: e.target.value })}
+                    placeholder="energi"
+                    required
+                    className="h-9 text-xs font-mono"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -464,33 +517,9 @@ export default function ModuleManagementView({
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-mono text-zinc-500">URL Ikon / Thumbnail (Opsional)</Label>
-                  <Input
-                    value={zoneForm.icon_url}
-                    onChange={(e) => setZoneForm({ ...zoneForm, icon_url: e.target.value })}
-                    placeholder="https://example.com/icon.png"
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-mono text-zinc-500">Warna Aksen Visual (Hex)</Label>
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="color"
-                      value={zoneForm.color_theme}
-                      onChange={(e) => setZoneForm({ ...zoneForm, color_theme: e.target.value })}
-                      className="w-9 h-9 rounded border border-zinc-200 dark:border-zinc-800 cursor-pointer bg-transparent"
-                    />
-                    <Input
-                      value={zoneForm.color_theme}
-                      onChange={(e) => setZoneForm({ ...zoneForm, color_theme: e.target.value })}
-                      placeholder="#3b82f6"
-                      className="h-9 text-xs font-mono flex-1"
-                    />
-                  </div>
-                </div>
+
+
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Zona Aktif</span>

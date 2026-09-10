@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import InnovationsView from './InnovationsView'
 import InnovationFormView from './InnovationFormView'
 import ModuleManagementView from './ModuleManagementView'
 import ModuleUsageView from './ModuleUsageView'
 import SuggestionsTable from './SuggestionsTable'
-import SettingsView from './SettingsView'
 import {
   fetchInnovations,
   createInnovation,
@@ -24,8 +24,6 @@ import {
   createZone,
   updateZone,
   deleteZone,
-  fetchSettings,
-  saveSettings,
   checkApiHealth
 } from '@/lib/api'
 import { useTheme } from '@/lib/theme'
@@ -35,7 +33,6 @@ import {
   MessageSquare,
   Compass,
   BarChart3,
-  Sliders,
   LogOut,
   Sun,
   Moon,
@@ -47,21 +44,45 @@ import {
 } from 'lucide-react'
 
 export default function Dashboard({ username, onLogout }) {
-  // Navigation: 'innovations' | 'modules' | 'usage' | 'suggestions' | 'settings'
-  const [currentView, setCurrentView] = useState('innovations')
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Derive currentView from URL path
+  const currentView = useMemo(() => {
+    const path = location.pathname.replace(/^\//, '')
+    const viewMap = {
+      'dashboard': 'usage',
+      'innovations': 'innovations',
+      'innovations/new': 'innovation-form',
+      'innovations/edit': 'innovation-form',
+      'modules': 'modules',
+      'suggestions': 'suggestions',
+    }
+    // Check for edit path pattern
+    if (path.startsWith('innovations/edit')) return 'innovation-form'
+    return viewMap[path] || 'usage'
+  }, [location.pathname])
+
+  const setCurrentView = useCallback((view) => {
+    const routeMap = {
+      'usage': '/dashboard',
+      'innovations': '/innovations',
+      'innovation-form': '/innovations/new',
+      'modules': '/modules',
+      'suggestions': '/suggestions',
+    }
+    navigate(routeMap[view] || '/dashboard')
+  }, [navigate])
+
   const [editingInnovation, setEditingInnovation] = useState(null)
 
   const [innovations, setInnovations] = useState([])
-  const [selectedZone, setSelectedZone] = useState(null)
   const [moduleUsage, setModuleUsage] = useState(null)
   const [suggestions, setSuggestions] = useState([])
   const [personas, setPersonas] = useState([])
   const [zones, setZones] = useState([])
-  const [settings, setSettingsData] = useState(null)
 
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
   const [apiStatus, setApiStatus] = useState('checking')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -71,9 +92,8 @@ export default function Dashboard({ username, onLogout }) {
   const viewTitles = {
     innovations: 'Daftar Penelitian & Hasil Riset BRIN',
     modules: 'Kelola Modul Meja Interaktif',
-    usage: 'Histori Pemakaian Modul',
+    usage: 'Dashboard',
     suggestions: 'Usulan Riset Pengunjung',
-    settings: 'Pengaturan Sistem',
   }
 
   const verifyHealth = useCallback(async () => {
@@ -85,7 +105,7 @@ export default function Dashboard({ username, onLogout }) {
     if (isFetchingRef.current) return
     isFetchingRef.current = true
 
-    if (isManualRefresh) setRefreshing(true)
+    if (isManualRefresh) setLoading(true)
     verifyHealth()
 
     try {
@@ -94,15 +114,13 @@ export default function Dashboard({ username, onLogout }) {
         usageRes,
         suggestionsRes,
         personasRes,
-        zonesRes,
-        settingsRes
+        zonesRes
       ] = await Promise.all([
-        fetchInnovations(selectedZone).catch(() => []),
+        fetchInnovations().catch(() => []),
         fetchModuleUsage().catch(() => null),
         fetchSuggestions().catch(() => []),
         fetchPersonas().catch(() => []),
-        fetchZones().catch(() => []),
-        fetchSettings().catch(() => null)
+        fetchZones().catch(() => [])
       ])
 
       if (Array.isArray(innoRes)) setInnovations(innoRes)
@@ -110,7 +128,6 @@ export default function Dashboard({ username, onLogout }) {
       if (Array.isArray(suggestionsRes)) setSuggestions(suggestionsRes)
       if (Array.isArray(personasRes)) setPersonas(personasRes)
       if (Array.isArray(zonesRes)) setZones(zonesRes)
-      if (settingsRes) setSettingsData(settingsRes)
 
       if (isManualRefresh) {
         toast.success('Data berhasil diperbarui')
@@ -121,23 +138,13 @@ export default function Dashboard({ username, onLogout }) {
       }
     } finally {
       setLoading(false)
-      setRefreshing(false)
       isFetchingRef.current = false
     }
-  }, [selectedZone, verifyHealth])
+  }, [verifyHealth])
 
   useEffect(() => {
     loadData()
   }, [loadData])
-
-  // Polling auto-sync every 10s
-  useEffect(() => {
-    if (!autoSyncEnabled) return
-    const interval = setInterval(() => {
-      loadData(false)
-    }, 10000)
-    return () => clearInterval(interval)
-  }, [autoSyncEnabled, loadData])
 
   // --- INNOVATION HANDLERS ---
   const handleSaveInnovation = async (id, data) => {
@@ -149,7 +156,7 @@ export default function Dashboard({ username, onLogout }) {
         await createInnovation(data)
         toast.success('Penelitian baru berhasil ditambahkan')
       }
-      setCurrentView('innovations')
+      navigate('/innovations')
       setEditingInnovation(null)
       loadData(false)
     } catch (err) {
@@ -165,6 +172,16 @@ export default function Dashboard({ username, onLogout }) {
       loadData(false)
     } catch (err) {
       toast.error(err.message || 'Gagal menghapus penelitian')
+    }
+  }
+
+  const handleUpdateRelevance = async (id, mappings) => {
+    try {
+      await updateInnovationRelevance(id, mappings)
+      toast.success('Relevansi berhasil diperbarui')
+      loadData(false)
+    } catch (err) {
+      toast.error(err.message || 'Gagal memperbarui relevansi')
     }
   }
 
@@ -255,13 +272,13 @@ export default function Dashboard({ username, onLogout }) {
     }
   }
 
-  // --- SETTINGS HANDLER ---
-  const handleSaveSettings = async (displayLimit) => {
-    await saveSettings(displayLimit)
-    loadData(false)
-  }
 
   const navItems = [
+    {
+      id: 'usage',
+      label: 'Dashboard',
+      icon: BarChart3,
+    },
     {
       id: 'innovations',
       label: 'Daftar Penelitian',
@@ -275,26 +292,16 @@ export default function Dashboard({ username, onLogout }) {
       count: personas.length + zones.length,
     },
     {
-      id: 'usage',
-      label: 'Histori Pemakaian Modul',
-      icon: BarChart3,
-    },
-    {
       id: 'suggestions',
       label: 'Usulan Riset Pengunjung',
       icon: MessageSquare,
       count: suggestions.length,
     },
-    {
-      id: 'settings',
-      label: 'Pengaturan Sistem',
-      icon: Sliders,
-    },
   ]
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
-      <Toaster position="top-right" richColors theme={isDark ? 'dark' : 'light'} />
+      <Toaster position="bottom-right" richColors theme={isDark ? 'dark' : 'light'} />
 
       {/* Backdrop overlay for mobile */}
       {sidebarOpen && (
@@ -320,7 +327,7 @@ export default function Dashboard({ username, onLogout }) {
                 <div className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-100 leading-none">
                   RESEARCH TABLE
                 </div>
-                <div className="text-[10px] text-zinc-400 font-mono mt-0.5 leading-none">ADMIN CONSOLE</div>
+                <div className="text-[10px] text-zinc-400 font-mono mt-0.5 leading-none">ADMIN CMS</div>
               </div>
             </div>
             <button
@@ -416,7 +423,7 @@ export default function Dashboard({ username, onLogout }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open('https://rt-api.gagasan.tech/docs', '_blank')}
+              onClick={() => window.open(`${import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'}/docs`, '_blank')}
               className="h-9 text-xs font-medium border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
             >
               <BookOpen className="w-3.5 h-3.5 mr-1.5 text-zinc-500 dark:text-zinc-400" />
@@ -448,11 +455,13 @@ export default function Dashboard({ username, onLogout }) {
               onSaveInnovation={handleSaveInnovation}
               onDeleteInnovation={handleDeleteInnovation}
               onUpdateRelevance={handleUpdateRelevance}
-              selectedZone={selectedZone}
-              onSelectZone={setSelectedZone}
               onNavigateToForm={(item) => {
                 setEditingInnovation(item)
-                setCurrentView('innovation-form')
+                if (item) {
+                  navigate(`/innovations/edit/${item.id}`)
+                } else {
+                  navigate('/innovations/new')
+                }
               }}
             />
           )}
@@ -467,7 +476,7 @@ export default function Dashboard({ username, onLogout }) {
               }}
               onCancel={() => {
                 setEditingInnovation(null)
-                setCurrentView('innovations')
+                navigate('/innovations')
               }}
             />
           )}
@@ -513,19 +522,11 @@ export default function Dashboard({ username, onLogout }) {
             </div>
           )}
 
-          {currentView === 'settings' && (
-            <SettingsView
-              settings={settings}
-              onSaveSettings={handleSaveSettings}
-              apiStatus={apiStatus}
-              onVerifyHealth={verifyHealth}
-            />
-          )}
         </div>
 
         {/* Global Footer */}
         <footer className="px-8 py-4 border-t border-zinc-200 dark:border-zinc-800/60 text-xs text-zinc-400 dark:text-zinc-600 flex items-center justify-between font-mono">
-          <div>RESEARCH TABLE · PANEL ADMIN BRIN</div>
+          <div></div>
           <div>SWAGGER: /docs</div>
         </footer>
       </main>

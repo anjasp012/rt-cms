@@ -48,7 +48,6 @@ export default function MasterDataView({
       await onUpdateZone(editingZone.id, {
         name: editingZone.name,
         description: editingZone.description,
-        color_theme: editingZone.color_theme,
       })
       setEditingZone(null)
     } finally {
@@ -172,10 +171,10 @@ export default function MasterDataView({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 flex items-center justify-center font-mono text-xs font-bold">
-                        {z.zone_number}
+                        {z.name.charAt(0)}
                       </span>
                       <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                        Zona {z.zone_number}: {z.name}
+                        Zona {z.name}
                       </span>
                     </div>
                     <button

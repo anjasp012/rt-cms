@@ -33,8 +33,6 @@ export default function InnovationsView({
   onSaveInnovation,
   onDeleteInnovation,
   onUpdateRelevance,
-  selectedZone,
-  onSelectZone,
   onNavigateToForm
 }) {
   const [search, setSearch] = useState('')
@@ -48,12 +46,10 @@ export default function InnovationsView({
     return innovations.filter(item => {
       const matchSearch = 
         item.title?.toLowerCase().includes(search.toLowerCase()) ||
-        item.category_tag?.toLowerCase().includes(search.toLowerCase()) ||
         item.short_description?.toLowerCase().includes(search.toLowerCase())
-      const matchZone = selectedZone ? item.zone_id === parseInt(selectedZone) : true
-      return matchSearch && matchZone
+      return matchSearch
     })
-  }, [innovations, search, selectedZone])
+  }, [innovations, search])
 
   const handleOpenAdd = () => {
     onNavigateToForm(null)
@@ -93,19 +89,6 @@ export default function InnovationsView({
               className="pl-8 h-9 text-xs"
             />
           </div>
-
-          <select
-            value={selectedZone || ''}
-            onChange={(e) => onSelectZone(e.target.value ? parseInt(e.target.value) : null)}
-            className="h-9 px-3 text-xs rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 text-zinc-900 dark:text-zinc-100 focus:outline-none"
-          >
-            <option value="">Semua 9 Zona Riset</option>
-            {zones.map(z => (
-              <option key={z.id} value={z.id}>
-                Zona {z.zone_number}: {z.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         <Button
@@ -125,7 +108,7 @@ export default function InnovationsView({
             <thead className="bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 font-mono">
               <tr>
                 <th className="p-3 w-10 text-center">#</th>
-                <th className="p-3 text-left">Judul Inovasi & Kategori</th>
+                <th className="p-3 text-left">Judul Inovasi</th>
                 <th className="p-3 w-36 text-left">Modul Pengguna</th>
                 <th className="p-3 w-36 text-left">Zona Riset</th>
                 <th className="p-3 w-28 text-center">TRL Level</th>
@@ -155,16 +138,24 @@ export default function InnovationsView({
                       {idx + 1}
                     </td>
                     <td className="p-3">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-                        {item.title}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[11px] font-mono text-zinc-500">
-                          [{item.category_tag}]
-                        </span>
-                        <span className="text-[11px] font-mono text-zinc-400">
-                          /{item.slug}
-                        </span>
+                      <div className="flex items-start gap-3">
+                        {item.thumbnail_url ? (
+                          <img src={item.thumbnail_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${item.thumbnail_url}` : item.thumbnail_url} alt="" className="w-10 h-10 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white flex-shrink-0" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                            <Lightbulb className="w-4 h-4 text-zinc-400" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
+                            {item.title}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] font-mono text-zinc-400">
+                              /{item.slug}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="p-3">

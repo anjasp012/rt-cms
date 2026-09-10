@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
 function getJwt() {
   return localStorage.getItem('rt_jwt');
@@ -60,7 +60,6 @@ async function request(url, options = {}) {
         });
       } else {
         clearTokens();
-        window.location.reload();
       }
     } catch (e) {
       clearTokens();
@@ -83,7 +82,8 @@ export async function checkApiHealth() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch('https://rt-api.gagasan.tech/', { signal: controller.signal });
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+    const res = await fetch(`${backendUrl}/`, { signal: controller.signal });
     clearTimeout(timeoutId);
     return res.ok;
   } catch (err) {
@@ -117,16 +117,7 @@ export async function fetchAnalytics() {
   return request(`${API_BASE}/admin/analytics`);
 }
 
-export async function fetchSettings() {
-  return request(`${API_BASE}/admin/settings`);
-}
 
-export async function saveSettings(frontend_display_limit) {
-  return request(`${API_BASE}/admin/settings`, {
-    method: 'POST',
-    body: JSON.stringify({ frontend_display_limit: parseInt(frontend_display_limit) }),
-  });
-}
 
 // 📬 2. MODERASI USULAN RISET PENGUNJUNG
 export async function fetchSuggestions({ status = null, limit = 50, offset = 0 } = {}) {
@@ -245,4 +236,31 @@ export async function updateInnovationRelevance(id, mappings) {
     method: 'POST',
     body: JSON.stringify(mappings),
   });
+}
+
+// 📁 5. FILE UPLOAD
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const jwt = localStorage.getItem('rt_jwt');
+  const headers = {};
+  if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
+  
+  const res = await fetch(`${API_BASE}/admin/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    let errDetail = 'Gagal mengunggah file';
+    try {
+      const errJson = await res.json();
+      errDetail = errJson.detail || errDetail;
+    } catch (_) {}
+    throw new Error(errDetail);
+  }
+  
+  return res.json();
 }

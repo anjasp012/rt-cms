@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from '@/components/LoginPage'
 import Dashboard from '@/components/Dashboard'
 import { clearTokens } from '@/lib/api'
@@ -23,7 +24,14 @@ function App() {
     return <LoginPage onLogin={handleLogin} />
   }
 
-  return <Dashboard username={user} onLogout={handleLogout} />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/*" element={<Dashboard username={user} onLogout={handleLogout} />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
 export default App
