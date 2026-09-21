@@ -24,7 +24,7 @@ import {
   Loader2, 
   Check
 } from 'lucide-react'
-import { getImageUrl } from '@/lib/utils'
+import { getImageUrl, stripHtml } from '@/lib/utils'
 
 export default function InnovationsView({
   innovations,
@@ -113,7 +113,7 @@ export default function InnovationsView({
                 <th className="p-3 w-36 text-left">Modul Pengguna</th>
                 <th className="p-3 w-36 text-left">Modul Tantangan</th>
                 <th className="p-3 w-28 text-center">TRL Level</th>
-                <th className="p-3 text-left">Dampak Terapan</th>
+                <th className="p-3 text-left">Ringkasan</th>
                 <th className="p-3 w-24 text-center">Aksi</th>
               </tr>
             </thead>
@@ -160,13 +160,13 @@ export default function InnovationsView({
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                        {item.persona_name || `Modul ${item.persona_id}`}
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {item.persona?.name || item.persona_name || personas?.find(p => p.id === item.persona_id)?.name || '-'}
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                        {item.zone?.name || item.zone_id}
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {item.zone?.name || item.zone_name || zones?.find(z => z.id === item.zone_id)?.name || '-'}
                       </span>
                     </td>
                     <td className="p-3 text-center">
@@ -175,8 +175,8 @@ export default function InnovationsView({
                       </Badge>
                     </td>
                     <td className="p-3">
-                      <p className="text-zinc-600 dark:text-zinc-300 line-clamp-2 text-xs">
-                        {item.impact || item.short_description}
+                      <p className="text-zinc-600 dark:text-zinc-300 line-clamp-2 text-xs leading-relaxed">
+                        {stripHtml(item.summary || item.short_description || item.impact)}
                       </p>
                     </td>
                     <td className="p-3 text-center">

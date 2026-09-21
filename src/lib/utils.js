@@ -43,3 +43,16 @@ export function getImageUrl(url) {
   }
   return clean
 }
+
+export function stripHtml(html) {
+  if (!html) return ''
+  return html
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim()
+}
