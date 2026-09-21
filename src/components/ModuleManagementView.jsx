@@ -236,8 +236,13 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {p.icon_url ? (
-                      <img src={p.icon_url} alt="" className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" />
+                    {p.icon_url && (p.icon_url.startsWith('http') || p.icon_url.startsWith('/') || p.icon_url.includes('.')) ? (
+                      <img 
+                        src={p.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${p.icon_url}` : p.icon_url} 
+                        alt="" 
+                        className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
                     ) : (
                       <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                         <Users className="w-3.5 h-3.5 text-zinc-400" />
@@ -292,8 +297,13 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {z.icon_url ? (
-                      <img src={z.icon_url} alt="" className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" />
+                    {z.icon_url && (z.icon_url.startsWith('http') || z.icon_url.startsWith('/') || z.icon_url.includes('.')) ? (
+                      <img 
+                        src={z.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${z.icon_url}` : z.icon_url} 
+                        alt="" 
+                        className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
                     ) : (
                       <span 
                         className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm bg-blue-500"
