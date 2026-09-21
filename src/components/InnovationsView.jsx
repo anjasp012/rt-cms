@@ -24,6 +24,7 @@ import {
   Loader2, 
   Check
 } from 'lucide-react'
+import { getImageUrl } from '@/lib/utils'
 
 export default function InnovationsView({
   innovations,
@@ -140,7 +141,7 @@ export default function InnovationsView({
                     <td className="p-3">
                       <div className="flex items-start gap-3">
                         {item.thumbnail_url ? (
-                          <img src={item.thumbnail_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${item.thumbnail_url}` : item.thumbnail_url} alt="" className="w-10 h-10 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white flex-shrink-0" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                          <img src={getImageUrl(item.thumbnail_url)} alt="" className="w-10 h-10 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white flex-shrink-0" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
                         ) : (
                           <div className="w-10 h-10 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
                             <Lightbulb className="w-4 h-4 text-zinc-400" />

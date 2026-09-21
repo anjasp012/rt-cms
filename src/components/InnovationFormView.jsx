@@ -20,6 +20,7 @@ import {
   Tag
 } from 'lucide-react'
 import { uploadFile } from '@/lib/api'
+import { getImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function InnovationFormView({ innovation, zones, personas, onSave, onCancel }) {
@@ -94,7 +95,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
     setUploadingImage(true)
     try {
       const res = await uploadFile(file)
-      setFormData(prev => ({ ...prev, thumbnail_url: res.url }))
+      setFormData(prev => ({ ...prev, thumbnail_url: res.relative_url || res.url }))
       toast.success('Gambar berhasil diunggah')
     } catch (err) {
       toast.error(err.message || 'Gagal mengunggah gambar')
@@ -182,7 +183,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
 
               {formData.thumbnail_url && (
                 <div className="mt-3">
-                  <img src={formData.thumbnail_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${formData.thumbnail_url}` : formData.thumbnail_url} alt="Preview" className="h-32 object-contain bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800 p-1" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                  <img src={getImageUrl(formData.thumbnail_url)} alt="Preview" className="h-32 object-contain bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800 p-1" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
                 </div>
               )}
             </div>

@@ -32,3 +32,14 @@ export function getTrlCategory(trl) {
   if (trl <= 6) return 'Pengembangan & Uji Lab'
   return 'Hilirisasi & Siap Terap'
 }
+
+export function getImageUrl(url) {
+  if (!url) return ''
+  // Strip hardcoded localhost / 127.0.0.1 if old URL was stored in DB
+  let clean = url.replace(/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/, '')
+  if (clean.startsWith('/')) {
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')
+    return backendUrl ? `${backendUrl}${clean}` : clean
+  }
+  return clean
+}

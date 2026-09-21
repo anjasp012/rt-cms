@@ -35,6 +35,7 @@ import {
   Upload
 } from 'lucide-react'
 import { uploadFile } from '@/lib/api'
+import { getImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function ModuleManagementView({
@@ -167,10 +168,11 @@ export default function ModuleManagementView({
     setUploadingImage(true)
     try {
       const res = await uploadFile(file)
+      const savedUrl = res.relative_url || res.url
       if (type === 'persona') {
-        setPersonaForm(prev => ({ ...prev, icon_url: res.url }))
+        setPersonaForm(prev => ({ ...prev, icon_url: savedUrl }))
       } else {
-        setZoneForm(prev => ({ ...prev, icon_url: res.url }))
+        setZoneForm(prev => ({ ...prev, icon_url: savedUrl }))
       }
       toast.success('Ikon berhasil diunggah')
     } catch (err) {
@@ -238,7 +240,7 @@ export default function ModuleManagementView({
                   <div className="flex items-center gap-2">
                     {p.icon_url && (p.icon_url.startsWith('http') || p.icon_url.startsWith('/') || p.icon_url.includes('.')) ? (
                       <img 
-                        src={p.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${p.icon_url}` : p.icon_url} 
+                        src={getImageUrl(p.icon_url)} 
                         alt="" 
                         className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -299,7 +301,7 @@ export default function ModuleManagementView({
                   <div className="flex items-center gap-2">
                     {z.icon_url && (z.icon_url.startsWith('http') || z.icon_url.startsWith('/') || z.icon_url.includes('.')) ? (
                       <img 
-                        src={z.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${z.icon_url}` : z.icon_url} 
+                        src={getImageUrl(z.icon_url)} 
                         alt="" 
                         className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -404,7 +406,7 @@ export default function ModuleManagementView({
                   </div>
                   {personaForm.icon_url && (
                     <div className="mt-2">
-                      <img src={personaForm.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${personaForm.icon_url}` : personaForm.icon_url} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                      <img src={getImageUrl(personaForm.icon_url)} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
                     </div>
                   )}
                 </div>
@@ -485,7 +487,7 @@ export default function ModuleManagementView({
                   </div>
                   {zoneForm.icon_url && (
                     <div className="mt-2">
-                      <img src={zoneForm.icon_url.startsWith('/') ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${zoneForm.icon_url}` : zoneForm.icon_url} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
+                      <img src={getImageUrl(zoneForm.icon_url)} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
                     </div>
                   )}
                 </div>
