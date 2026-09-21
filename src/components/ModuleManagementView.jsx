@@ -191,7 +191,7 @@ export default function ModuleManagementView({
             Kelola Modul Meja Interaktif
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Tambah, ubah nama, deskripsi, urutan, atau hapus Modul Pengguna dan Token Tantangan.
+            Tambah, ubah nama, deskripsi, urutan, atau hapus Modul Pengguna dan Modul Tantangan.
           </p>
         </div>
 
@@ -201,7 +201,7 @@ export default function ModuleManagementView({
           className="h-9 text-xs font-medium gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" />
-          {activeTab === 'personas' ? 'Tambah Modul Pengguna' : 'Tambah Token Tantangan'}
+          {activeTab === 'personas' ? 'Tambah Modul Pengguna' : 'Tambah Modul Tantangan'}
         </Button>
       </div>
 
@@ -223,7 +223,7 @@ export default function ModuleManagementView({
           className="text-xs h-8"
         >
           <Compass className="w-3.5 h-3.5 mr-1.5" />
-          Token Tantangan &bull; {zones.length} Zona
+          Modul Tantangan &bull; {zones.length} Modul
         </Button>
       </div>
 
@@ -288,7 +288,7 @@ export default function ModuleManagementView({
         </div>
       )}
 
-      {/* Tab 2: Token Tantangan (Zona) */}
+      {/* Tab 2: Modul Tantangan (Zona) */}
       {activeTab === 'zones' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {zones.map((z) => (
@@ -307,28 +307,26 @@ export default function ModuleManagementView({
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
-                      <span 
-                        className="w-6 h-6 rounded flex items-center justify-center font-mono text-xs font-bold text-white shadow-sm bg-blue-500"
-                      >
-                        {z.name.charAt(0)}
-                      </span>
+                      <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                        <Compass className="w-3.5 h-3.5 text-zinc-400" />
+                      </div>
                     )}
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                      Zona {z.name}
+                      {z.name}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(z)}
                       className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-                      title="Edit Zona"
+                      title="Edit Modul"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleOpenDelete(z)}
                       className="p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-400 hover:text-rose-500"
-                      title="Hapus Zona"
+                      title="Hapus Modul"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -336,14 +334,11 @@ export default function ModuleManagementView({
                 </div>
 
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-3 leading-relaxed min-h-[48px]">
-                  {z.description || 'Tidak ada deskripsi zona'}
+                  {z.description || 'Tidak ada deskripsi modul'}
                 </p>
 
                 <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>/{z.slug}</span>
-                  </div>
+                  <span>/{z.slug}</span>
                   <Badge variant={z.is_active ? 'approved' : 'rejected'}>
                     {z.is_active ? 'Aktif' : 'Nonaktif'}
                   </Badge>
@@ -366,13 +361,13 @@ export default function ModuleManagementView({
               <div>
                 <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   {editingItem
-                    ? `Edit ${activeTab === 'personas' ? 'Modul Pengguna' : 'Token Tantangan'}`
-                    : `Tambah ${activeTab === 'personas' ? 'Modul Pengguna Baru' : 'Token Tantangan Baru'}`}
+                    ? `Edit ${activeTab === 'personas' ? 'Modul Pengguna' : 'Modul Tantangan'}`
+                    : `Tambah ${activeTab === 'personas' ? 'Modul Pengguna Baru' : 'Modul Tantangan Baru'}`}
                 </DialogTitle>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                   {activeTab === 'personas' 
                     ? 'Profil kelompok pengguna pengunjung meja interaktif.'
-                    : 'Zona fokus riset BRIN yang dapat dieksplorasi.'}
+                    : 'Tantangan fokus riset BRIN yang dapat dieksplorasi.'}
                 </p>
               </div>
             </div>
@@ -493,7 +488,7 @@ export default function ModuleManagementView({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs font-mono text-zinc-500">Nama Zona Riset *</Label>
+                  <Label className="text-xs font-mono text-zinc-500">Nama Modul Tantangan *</Label>
                   <Input
                     value={zoneForm.name}
                     onChange={(e) => setZoneForm({
@@ -534,7 +529,7 @@ export default function ModuleManagementView({
 
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
-                  <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Zona Aktif</span>
+                  <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Modul Aktif</span>
                   <input
                     type="checkbox"
                     checked={zoneForm.is_active}

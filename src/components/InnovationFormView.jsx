@@ -222,7 +222,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-sm font-mono text-zinc-500">Zona Riset BRIN *</Label>
+                <Label className="text-sm font-mono text-zinc-500">Modul Tantangan *</Label>
                 <div className="relative">
                   <select
                     value={formData.zone_id}
@@ -231,7 +231,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
                   >
                     {zones.map(z => (
                       <option key={z.id} value={z.id}>
-                        Zona: {z.name}
+                        {z.name}
                       </option>
                     ))}
                   </select>
@@ -293,9 +293,9 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
               </div>
             </div>
 
-            {/* Zona Relevan Tags — di bawah TRL + Pusat Riset */}
+            {/* Modul Tantangan Relevan Tags — di bawah TRL + Pusat Riset */}
             <div className="space-y-1.5">
-              <Label className="text-sm font-mono text-zinc-500">Zona Relevan (Tag)</Label>
+              <Label className="text-sm font-mono text-zinc-500">Modul Tantangan Relevan (Tag)</Label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {formData.relevant_tags.map((tag, i) => (
                   <Badge key={i} variant="secondary" className="gap-1.5 pr-1 text-xs font-mono">
@@ -327,7 +327,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
                   }}
                   className="w-full h-10 pl-3 pr-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none"
                 >
-                  <option value="">+ Tambah zona relevan...</option>
+                  <option value="">+ Tambah tantangan relevan...</option>
                   {zones
                     .filter(z => !formData.relevant_tags.includes(z.name))
                     .map(z => (

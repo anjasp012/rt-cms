@@ -111,7 +111,7 @@ export default function InnovationsView({
                 <th className="p-3 w-10 text-center">#</th>
                 <th className="p-3 text-left">Judul Inovasi</th>
                 <th className="p-3 w-36 text-left">Modul Pengguna</th>
-                <th className="p-3 w-36 text-left">Zona Riset</th>
+                <th className="p-3 w-36 text-left">Modul Tantangan</th>
                 <th className="p-3 w-28 text-center">TRL Level</th>
                 <th className="p-3 text-left">Dampak Terapan</th>
                 <th className="p-3 w-24 text-center">Aksi</th>
@@ -166,7 +166,7 @@ export default function InnovationsView({
                     </td>
                     <td className="p-3">
                       <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                        {item.zone?.name || `Zona ${item.zone_id}`}
+                        {item.zone?.name || item.zone_id}
                       </span>
                     </td>
                     <td className="p-3 text-center">

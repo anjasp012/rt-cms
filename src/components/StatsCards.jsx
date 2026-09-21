@@ -37,9 +37,9 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
       textColor: 'text-zinc-900 dark:text-zinc-100',
     },
     {
-      title: 'Zona Riset (Slot 2)',
+      title: 'Modul Tantangan (Slot 2)',
       value: total_zones,
-      description: '9 Token tantangan BRIN',
+      description: 'Modul tantangan BRIN',
       icon: Compass,
       textColor: 'text-zinc-900 dark:text-zinc-100',
     },
@@ -153,7 +153,7 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Token Tantangan Terpopuler
+                Modul Tantangan Terpopuler
               </h4>
             </div>
 

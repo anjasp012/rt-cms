@@ -70,7 +70,13 @@ async function request(url, options = {}) {
     let errorDetail = 'Permintaan gagal';
     try {
       const errJson = await res.json();
-      errorDetail = errJson.detail?.responseMessage || errJson.detail || errJson.responseMessage || 'Terjadi kesalahan pada server';
+      if (Array.isArray(errJson.detail)) {
+        errorDetail = errJson.detail.map(d => d.msg || (typeof d === 'string' ? d : JSON.stringify(d))).join(', ');
+      } else if (typeof errJson.detail === 'object' && errJson.detail !== null) {
+        errorDetail = errJson.detail.responseMessage || errJson.detail.message || JSON.stringify(errJson.detail);
+      } else {
+        errorDetail = errJson.detail || errJson.responseMessage || errJson.message || 'Terjadi kesalahan pada server';
+      }
     } catch (_) { }
     throw new Error(errorDetail);
   }
@@ -155,7 +161,7 @@ export async function bulkDeleteSuggestions(ids) {
   });
 }
 
-// 👥 3. CRUD MODUL PENGGUNA (PERSONA) & TOKEN TANTANGAN (ZONA)
+// 👥 3. CRUD MODUL PENGGUNA (PERSONA) & MODUL TANTANGAN (ZONA)
 export async function fetchPersonas() {
   return request(`${API_BASE}/admin/personas`);
 }

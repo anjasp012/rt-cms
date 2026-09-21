@@ -222,10 +222,10 @@ export default function Dashboard({ username, onLogout }) {
   const handleCreateZone = async (payload) => {
     try {
       await createZone(payload)
-      toast.success('Token Tantangan berhasil ditambahkan')
+      toast.success('Modul Tantangan berhasil ditambahkan')
       loadData(false)
     } catch (err) {
-      toast.error(err.message || 'Gagal menambah zona')
+      toast.error(err.message || 'Gagal menambah modul tantangan')
       throw err
     }
   }
@@ -233,10 +233,10 @@ export default function Dashboard({ username, onLogout }) {
   const handleUpdateZone = async (id, payload) => {
     try {
       await updateZone(id, payload)
-      toast.success('Token Tantangan berhasil disimpan')
+      toast.success('Modul Tantangan berhasil disimpan')
       loadData(false)
     } catch (err) {
-      toast.error(err.message || 'Gagal menyimpan zona')
+      toast.error(err.message || 'Gagal menyimpan modul tantangan')
       throw err
     }
   }
@@ -244,10 +244,10 @@ export default function Dashboard({ username, onLogout }) {
   const handleDeleteZone = async (id) => {
     try {
       await deleteZone(id)
-      toast.success('Token Tantangan berhasil dihapus')
+      toast.success('Modul Tantangan berhasil dihapus')
       loadData(false)
     } catch (err) {
-      toast.error(err.message || 'Gagal menghapus zona')
+      toast.error(err.message || 'Gagal menghapus modul tantangan')
     }
   }
 

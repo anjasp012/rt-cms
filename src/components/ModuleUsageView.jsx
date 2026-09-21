@@ -47,7 +47,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           Dashboard
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Statistik interaksi pengunjung pameran: frekuensi pemilihan Modul Pengguna, Token Tantangan, dan kombinasi terpopuler.
+          Statistik interaksi pengunjung pameran: frekuensi pemilihan Modul Pengguna, Modul Tantangan, dan kombinasi terpopuler.
         </p>
       </div>
 
@@ -76,13 +76,13 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           <div className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                Token Tantangan
+                Modul Tantangan
               </span>
               <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 font-mono animate-counter">
                 {summary.total_zone_types || 9}
               </div>
               <span className="text-[11px] text-zinc-400 font-mono block">
-                Zona Riset BRIN
+                Modul Tantangan Aktif
               </span>
             </div>
             <div className="p-2.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
@@ -157,17 +157,17 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           </CardContent>
         </Card>
 
-        {/* Token Tantangan (Zona Riset) Usage List */}
+        {/* Modul Tantangan Usage List */}
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm">
           <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <div>
                 <CardTitle className="text-sm font-semibold">
-                  Histori Pemakaian Token Tantangan
+                  Histori Pemakaian Modul Tantangan
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Berapa kali token tantangan dipilih pengunjung
+                  Berapa kali modul tantangan dipilih pengunjung
                 </CardDescription>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Pasangan Modul Pengguna + Token Tantangan yang paling diminati pengunjung
+              Pasangan Modul Pengguna + Modul Tantangan yang paling diminati pengunjung
             </CardDescription>
           </CardHeader>
           <CardContent className="p-5 pt-0">
@@ -280,7 +280,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
                   >
                     <div className="space-y-0.5 min-w-0">
                       <div className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        Modul: <span className="font-mono text-zinc-600 dark:text-zinc-300">{log.persona}</span> &bull; Zona: <span className="font-mono text-blue-500">{log.zone}</span>
+                        Modul: <span className="font-mono text-zinc-600 dark:text-zinc-300">{log.persona}</span> &bull; Tantangan: <span className="font-mono text-blue-500">{log.zone}</span>
                         {log.innovation_title && (
                           <span className="text-zinc-500 dark:text-zinc-400 font-normal"> &bull; Riset: <span className="font-mono text-emerald-600 dark:text-emerald-400">{log.innovation_title}</span></span>
                         )}

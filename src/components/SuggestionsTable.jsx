@@ -210,7 +210,7 @@ export default function SuggestionsTable({
                 <th className="p-3 text-left">Topik Riset yang Dicari</th>
                 <th className="p-3 w-36 text-left">Pengunjung</th>
                 <th className="p-3 w-36 text-left">Modul Pengguna</th>
-                <th className="p-3 w-36 text-left">Token Tantangan</th>
+                <th className="p-3 w-36 text-left">Modul Tantangan</th>
                 <th className="p-3 w-32 text-right">Waktu Masuk</th>
                 <th className="p-3 w-20 text-center">Aksi</th>
               </tr>

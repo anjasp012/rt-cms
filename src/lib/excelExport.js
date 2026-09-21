@@ -160,7 +160,7 @@ export function exportSuggestionsToExcel(data, customTitle = 'Daftar Usulan Rise
             <th class="th-header" style="width: 380px;">Topik Usulan Riset & Ide Pengunjung</th>
             <th class="th-header" style="width: 180px;">Nama Pengunjung & Usia</th>
             <th class="th-header" style="width: 160px;">Modul Pengguna</th>
-            <th class="th-header" style="width: 160px;">Token Tantangan</th>
+            <th class="th-header" style="width: 160px;">Modul Tantangan</th>
             <th class="th-header" style="width: 130px;">Tanggal Masuk</th>
             <th class="th-header" style="width: 100px;">Waktu</th>
           </tr>

@@ -66,7 +66,7 @@ export default function MasterDataView({
           className="text-xs h-8"
         >
           <Users className="w-3.5 h-3.5 mr-1.5" />
-          8 Modul Pengguna (Slot 1)
+          {personas.length} Modul Pengguna (Slot 1)
         </Button>
         <Button
           size="sm"
@@ -75,7 +75,7 @@ export default function MasterDataView({
           className="text-xs h-8"
         >
           <Compass className="w-3.5 h-3.5 mr-1.5" />
-          9 Zona Riset (Slot 2)
+          {zones.length} Modul Tantangan (Slot 2)
         </Button>
       </div>
 
@@ -174,7 +174,7 @@ export default function MasterDataView({
                         {z.name.charAt(0)}
                       </span>
                       <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                        Zona {z.name}
+                        {z.name}
                       </span>
                     </div>
                     <button
