@@ -32,7 +32,8 @@ import {
   Layers,
   Palette,
   Sparkles,
-  Upload
+  Upload,
+  X
 } from 'lucide-react'
 import { uploadFile } from '@/lib/api'
 import { getImageUrl } from '@/lib/utils'
@@ -376,8 +377,36 @@ export default function ModuleManagementView({
           <form onSubmit={handleFormSubmit} className="p-6 space-y-4 text-xs">
             {activeTab === 'personas' ? (
               <>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
+
+                  {/* Filament-style Preview on TOP */}
+                  {personaForm.icon_url ? (
+                    <div className="relative group w-20 h-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1 shadow-sm">
+                      <div className="relative w-full h-full rounded overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+                        <img 
+                          src={getImageUrl(personaForm.icon_url)} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPersonaForm(prev => ({ ...prev, icon_url: '' }))}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
+                          title="Hapus ikon"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col items-center justify-center text-center p-1">
+                      <Users className="w-5 h-5 text-zinc-400 mb-0.5" />
+                      <span className="text-[9px] text-zinc-400 font-mono">No icon</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <Input
                       value={personaForm.icon_url}
@@ -399,11 +428,6 @@ export default function ModuleManagementView({
                       </Button>
                     </div>
                   </div>
-                  {personaForm.icon_url && (
-                    <div className="mt-2">
-                      <img src={getImageUrl(personaForm.icon_url)} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -457,8 +481,36 @@ export default function ModuleManagementView({
               </>
             ) : (
               <>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
+
+                  {/* Filament-style Preview on TOP */}
+                  {zoneForm.icon_url ? (
+                    <div className="relative group w-20 h-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1 shadow-sm">
+                      <div className="relative w-full h-full rounded overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+                        <img 
+                          src={getImageUrl(zoneForm.icon_url)} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setZoneForm(prev => ({ ...prev, icon_url: '' }))}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
+                          title="Hapus ikon"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col items-center justify-center text-center p-1">
+                      <Compass className="w-5 h-5 text-zinc-400 mb-0.5" />
+                      <span className="text-[9px] text-zinc-400 font-mono">No icon</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <Input
                       value={zoneForm.icon_url}
@@ -480,11 +532,6 @@ export default function ModuleManagementView({
                       </Button>
                     </div>
                   </div>
-                  {zoneForm.icon_url && (
-                    <div className="mt-2">
-                      <img src={getImageUrl(zoneForm.icon_url)} alt="Preview" className="h-16 w-16 object-cover bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-1">

@@ -156,14 +156,43 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
               <span>Gambar Visual Penelitian</span>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-sm font-mono text-zinc-500">Thumbnail / Gambar Inovasi (Opsional)</Label>
-              <div className="flex items-center gap-3">
+
+              {/* Filament-style Preview on TOP */}
+              {formData.thumbnail_url ? (
+                <div className="relative group w-full max-w-sm rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2 shadow-sm">
+                  <div className="relative aspect-video w-full rounded-md overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+                    <img 
+                      src={getImageUrl(formData.thumbnail_url)} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
+                      title="Hapus gambar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full max-w-sm rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 p-5 text-center flex flex-col items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-zinc-400 mb-1.5" />
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Belum ada thumbnail</p>
+                  <p className="text-[11px] text-zinc-400">Pilih upload file atau masukkan tautan URL di bawah</p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-1">
                 <Input
                   value={formData.thumbnail_url}
                   onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
                   placeholder="https://example.com/image.jpg atau upload file"
-                  className="h-10 font-mono flex-1"
+                  className="h-10 font-mono flex-1 text-xs"
                 />
                 <div className="relative">
                   <input
@@ -173,19 +202,13 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     disabled={uploadingImage}
                   />
-                  <Button type="button" variant="secondary" className="h-10 gap-2" disabled={uploadingImage}>
+                  <Button type="button" variant="secondary" className="h-10 gap-2 text-xs" disabled={uploadingImage}>
                     {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                     Upload File
                   </Button>
                 </div>
               </div>
-              <p className="text-xs text-zinc-500 mt-1">Bisa masukkan URL langsung atau upload gambar baru dari komputermu.</p>
-
-              {formData.thumbnail_url && (
-                <div className="mt-3">
-                  <img src={getImageUrl(formData.thumbnail_url)} alt="Preview" className="h-32 object-contain bg-zinc-100 dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800 p-1" onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />
-                </div>
-              )}
+              <p className="text-xs text-zinc-500">Bisa masukkan URL langsung atau upload file gambar baru dari perangkat Anda.</p>
             </div>
           </div>
 
