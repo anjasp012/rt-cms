@@ -8,9 +8,6 @@ import {
   Loader2,
   Check,
   ArrowLeft,
-  Image as ImageIcon,
-  Upload,
-  X,
   Sparkles,
   HelpCircle,
   BookOpen,
@@ -21,8 +18,6 @@ import {
   CheckSquare,
   Square
 } from 'lucide-react'
-import { uploadFile } from '@/lib/api'
-import { getImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import IconPicker from '@/components/ui/IconPicker'
 
@@ -53,12 +48,10 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
     fun_fact: '',
     fun_fact_source: '',
     fun_fact_url: '',
-    thumbnail_url: '',
     is_active: true
   })
 
   const [loading, setLoading] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     if (innovation) {
@@ -88,7 +81,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         fun_fact: innovation.fun_fact || '',
         fun_fact_source: innovation.fun_fact_source || '',
         fun_fact_url: innovation.fun_fact_url || '',
-        thumbnail_url: innovation.thumbnail_url || '',
         is_active: innovation.is_active ?? true
       })
     } else {
@@ -117,7 +109,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         fun_fact: '',
         fun_fact_source: '',
         fun_fact_url: '',
-        thumbnail_url: '',
         is_active: true
       })
     }
@@ -160,21 +151,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
     })
   }
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    setUploadingImage(true)
-    try {
-      const res = await uploadFile(file)
-      setFormData(prev => ({ ...prev, thumbnail_url: res.relative_url || res.url }))
-      toast.success('Gambar berhasil diunggah')
-    } catch (err) {
-      toast.error(err.message || 'Gagal mengunggah gambar')
-    } finally {
-      setUploadingImage(false)
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -213,10 +189,7 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         verification_notes: formData.verification_notes.trim() || null,
         fun_fact: formData.fun_fact.trim() || null,
         fun_fact_source: formData.fun_fact_source.trim() || null,
-        fun_fact_url: formData.fun_fact_url.trim() || null,
-        thumbnail_url: formData.thumbnail_url.trim() || null,
-        short_description: formData.summary.trim() || formData.aspect.trim() || null,
-        impact: formData.summary.trim() || null
+        fun_fact_url: formData.fun_fact_url.trim() || null
       })
     } finally {
       setLoading(false)
@@ -626,79 +599,24 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
           </div>
         </Card>
 
-        {/* BAGIAN 6: Visual & Status */}
+        {/* BAGIAN 6: Status Publikasi */}
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold uppercase tracking-wider text-xs font-mono border-b border-zinc-100 dark:border-zinc-800/80 pb-2">
-            <ImageIcon className="w-4 h-4 text-zinc-400" />
-            <span>6. Thumbnail Visual & Status</span>
+            <Check className="w-4 h-4 text-emerald-500" />
+            <span>6. Status Publikasi Meja Interaktif</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-            <div className="space-y-2">
-              <Label className="text-xs font-mono text-zinc-500">Thumbnail Gambar (Opsional)</Label>
-              {formData.thumbnail_url ? (
-                <div className="relative group w-full max-w-sm rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2 shadow-sm">
-                  <div className="relative aspect-video w-full rounded-md overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-                    <img
-                      src={getImageUrl(formData.thumbnail_url)}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
-                      title="Hapus gambar"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full max-w-sm rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 p-4 text-center flex flex-col items-center justify-center">
-                  <ImageIcon className="w-6 h-6 text-zinc-400 mb-1" />
-                  <p className="text-xs text-zinc-400 font-medium">Belum ada thumbnail</p>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Input
-                  value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  placeholder="URL gambar atau upload..."
-                  className="h-9 font-mono text-xs flex-1"
-                />
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={uploadingImage}
-                  />
-                  <Button type="button" variant="secondary" className="h-9 text-xs gap-1.5" disabled={uploadingImage}>
-                    {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                    Upload
-                  </Button>
-                </div>
-              </div>
+          <div className="flex items-center justify-between p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 max-w-xl">
+            <div>
+              <span className="text-xs text-zinc-800 dark:text-zinc-200 font-semibold block">Status Aktif di Meja</span>
+              <span className="text-[11px] text-zinc-400">Tampilkan kartu solusi ini pada katalog meja interaktif</span>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
-                <div>
-                  <span className="text-xs text-zinc-800 dark:text-zinc-200 font-semibold block">Status Aktif di Meja</span>
-                  <span className="text-[11px] text-zinc-400">Tampilkan solusi ini pada layar meja interaktif</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded accent-zinc-900 dark:accent-zinc-100 cursor-pointer"
-                />
-              </div>
-            </div>
+            <input
+              type="checkbox"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="w-4 h-4 rounded accent-zinc-900 dark:accent-zinc-100 cursor-pointer"
+            />
           </div>
         </Card>
 

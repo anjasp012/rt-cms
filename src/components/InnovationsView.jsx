@@ -427,7 +427,7 @@ export default function InnovationsView({
                     </div>
                   )}
                   <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 leading-relaxed text-zinc-700 dark:text-zinc-300">
-                    {detailItem.summary || detailItem.short_description || 'Belum ada ringkasan'}
+                    {detailItem.summary || 'Belum ada ringkasan'}
                   </div>
                 </div>
 
