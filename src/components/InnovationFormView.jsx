@@ -53,7 +53,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
     fun_fact: '',
     fun_fact_source: '',
     fun_fact_url: '',
-    trl: 7,
     thumbnail_url: '',
     is_active: true
   })
@@ -89,7 +88,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         fun_fact: innovation.fun_fact || '',
         fun_fact_source: innovation.fun_fact_source || '',
         fun_fact_url: innovation.fun_fact_url || '',
-        trl: innovation.trl || 7,
         thumbnail_url: innovation.thumbnail_url || '',
         is_active: innovation.is_active ?? true
       })
@@ -119,7 +117,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         fun_fact: '',
         fun_fact_source: '',
         fun_fact_url: '',
-        trl: 7,
         thumbnail_url: '',
         is_active: true
       })
@@ -198,7 +195,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         title: formData.title.trim(),
         slug: formData.slug.trim(),
         year: formData.year ? parseInt(formData.year) : null,
-        trl: parseInt(formData.trl) || 7,
         publication_id: formData.publication_id.trim() || null,
         question: formData.question.trim() || null,
         card_icon: formData.card_icon.trim() || null,
@@ -630,11 +626,11 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
           </div>
         </Card>
 
-        {/* BAGIAN 6: Visual, TRL, & Status */}
+        {/* BAGIAN 6: Visual & Status */}
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold uppercase tracking-wider text-xs font-mono border-b border-zinc-100 dark:border-zinc-800/80 pb-2">
             <ImageIcon className="w-4 h-4 text-zinc-400" />
-            <span>6. Thumbnail Visual, TRL, & Status</span>
+            <span>6. Thumbnail Visual & Status</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
@@ -690,26 +686,6 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
             </div>
 
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-mono text-zinc-500">
-                  TRL (Tingkat Kesiapan Teknologi): <strong>TRL {formData.trl}/9</strong>
-                </Label>
-                <div className="flex items-center gap-3 pt-1">
-                  <input
-                    type="range"
-                    min="1"
-                    max="9"
-                    step="1"
-                    value={formData.trl}
-                    onChange={(e) => setFormData({ ...formData, trl: parseInt(e.target.value) })}
-                    className="flex-1 accent-zinc-900 dark:accent-zinc-100 cursor-pointer h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg"
-                  />
-                  <Badge variant="approved" className="font-mono text-xs px-2.5 py-1">
-                    TRL {formData.trl}
-                  </Badge>
-                </div>
-              </div>
-
               <div className="flex items-center justify-between p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
                 <div>
                   <span className="text-xs text-zinc-800 dark:text-zinc-200 font-semibold block">Status Aktif di Meja</span>

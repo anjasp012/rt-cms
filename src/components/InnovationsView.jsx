@@ -203,21 +203,20 @@ export default function InnovationsView({
                 <th className="p-3 text-left">Nama / Judul Solusi</th>
                 <th className="p-3 w-48 text-left">Aspek</th>
                 <th className="p-3 w-52 text-left">Tantangan</th>
-                <th className="p-3 w-28 text-center">TRL</th>
                 <th className="p-3 w-28 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={5} className="p-12 text-center text-zinc-500 font-mono">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
                     <span>Memuat daftar solusi BRIN...</span>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={5} className="p-12 text-center text-zinc-500 font-mono">
                     <Lightbulb className="w-8 h-8 mx-auto mb-2 text-zinc-400 opacity-50" />
                     <span>Tidak ada data solusi yang cocok</span>
                   </td>
@@ -318,13 +317,6 @@ export default function InnovationsView({
                         </div>
                       </td>
 
-                      {/* TRL */}
-                      <td className="p-3 text-center align-middle">
-                        <Badge variant="approved" className="font-mono text-xs px-2.5 py-0.5">
-                          TRL {item.trl ?? 7}/9
-                        </Badge>
-                      </td>
-
                       {/* Aksi */}
                       <td className="p-3 text-center align-middle">
                         <div className="flex items-center justify-center gap-1">
@@ -384,7 +376,6 @@ export default function InnovationsView({
                       >
                         {detailItem.zone?.name || detailItem.zone_name}
                       </span>
-                      <Badge variant="approved">TRL {detailItem.trl}/9</Badge>
                     </div>
 
                     <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100 leading-snug pt-1">

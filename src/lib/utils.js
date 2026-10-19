@@ -21,17 +21,6 @@ export function formatDate(dateStr) {
   }
 }
 
-export function getTrlBadgeColor(trl) {
-  if (trl <= 3) return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-  if (trl <= 6) return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-  return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-}
-
-export function getTrlCategory(trl) {
-  if (trl <= 3) return 'Riset Dasar / Konsep'
-  if (trl <= 6) return 'Pengembangan & Uji Lab'
-  return 'Hilirisasi & Siap Terap'
-}
 
 export function getImageUrl(url) {
   if (!url) return ''
