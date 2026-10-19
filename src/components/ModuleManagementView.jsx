@@ -38,6 +38,7 @@ import {
 import { uploadFile } from '@/lib/api'
 import { getImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
+import IconPicker from '@/components/ui/IconPicker'
 
 export default function ModuleManagementView({
   personas,
@@ -70,6 +71,8 @@ export default function ModuleManagementView({
   const [zoneForm, setZoneForm] = useState({
     name: '',
     slug: '',
+    color: '#996A12',
+    icon: 'rice',
     description: '',
     icon_url: '',
     is_active: true
@@ -89,6 +92,8 @@ export default function ModuleManagementView({
       setZoneForm({
         name: '',
         slug: '',
+        color: '#996A12',
+        icon: 'rice',
         description: '',
         icon_url: '',
         is_active: true
@@ -111,6 +116,8 @@ export default function ModuleManagementView({
       setZoneForm({
         name: item.name || '',
         slug: item.slug || '',
+        color: item.color || '#996A12',
+        icon: item.icon || '',
         description: item.description || '',
         icon_url: item.icon_url || '',
         is_active: item.is_active ?? true
@@ -189,10 +196,10 @@ export default function ModuleManagementView({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Kelola Modul Meja Interaktif
+            Kelola Peran & Tantangan
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Tambah, ubah nama, deskripsi, urutan, atau hapus Modul Pengguna dan Modul Tantangan.
+            Tambah, ubah nama, deskripsi, urutan, atau hapus Kategori Peran dan Tantangan.
           </p>
         </div>
 
@@ -202,7 +209,7 @@ export default function ModuleManagementView({
           className="h-9 text-xs font-medium gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" />
-          {activeTab === 'personas' ? 'Tambah Modul Pengguna' : 'Tambah Modul Tantangan'}
+          {activeTab === 'personas' ? 'Tambah Peran' : 'Tambah Tantangan'}
         </Button>
       </div>
 
@@ -215,7 +222,7 @@ export default function ModuleManagementView({
           className="text-xs h-8"
         >
           <Users className="w-3.5 h-3.5 mr-1.5" />
-          Modul Pengguna &bull; {personas.length} Modul
+          Peran &bull; {personas.length} Peran
         </Button>
         <Button
           size="sm"
@@ -224,7 +231,7 @@ export default function ModuleManagementView({
           className="text-xs h-8"
         >
           <Compass className="w-3.5 h-3.5 mr-1.5" />
-          Modul Tantangan &bull; {zones.length} Modul
+          Tantangan &bull; {zones.length} Tantangan
         </Button>
       </div>
 
@@ -246,6 +253,10 @@ export default function ModuleManagementView({
                         className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
+                    ) : p.icon ? (
+                      <div className="w-6 h-6 rounded bg-emerald-50 dark:bg-zinc-800 flex items-center justify-center text-emerald-600">
+                        <i className={`mdi mdi-${p.icon} text-base`}></i>
+                      </div>
                     ) : (
                       <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                         <Users className="w-3.5 h-3.5 text-zinc-400" />
@@ -307,6 +318,10 @@ export default function ModuleManagementView({
                         className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
+                    ) : z.icon ? (
+                      <div className="w-6 h-6 rounded bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-blue-600">
+                        <i className={`mdi mdi-${z.icon} text-base`}></i>
+                      </div>
                     ) : (
                       <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                         <Compass className="w-3.5 h-3.5 text-zinc-400" />
@@ -332,6 +347,20 @@ export default function ModuleManagementView({
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                </div>
+
+                {/* Color & Icon info */}
+                <div className="flex items-center gap-2 text-[11px] font-mono">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: z.color || '#996A12' }} />
+                    <span className="text-zinc-600 dark:text-zinc-400">{z.color || '#996A12'}</span>
+                  </div>
+                  {z.icon && (
+                    <span className="px-2 py-0.5 rounded bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                      <i className={`mdi mdi-${z.icon} text-sm text-blue-600`}></i>
+                      <span>{z.icon}</span>
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-3 leading-relaxed min-h-[48px]">
@@ -362,12 +391,12 @@ export default function ModuleManagementView({
               <div>
                 <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                   {editingItem
-                    ? `Edit ${activeTab === 'personas' ? 'Modul Pengguna' : 'Modul Tantangan'}`
-                    : `Tambah ${activeTab === 'personas' ? 'Modul Pengguna Baru' : 'Modul Tantangan Baru'}`}
+                    ? `Edit ${activeTab === 'personas' ? 'Peran' : 'Tantangan'}`
+                    : `Tambah ${activeTab === 'personas' ? 'Peran Baru' : 'Tantangan Baru'}`}
                 </DialogTitle>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                   {activeTab === 'personas' 
-                    ? 'Profil kelompok pengguna pengunjung meja interaktif.'
+                    ? 'Kategori peran pengunjung meja interaktif (Petani, Nelayan, Peneliti, dll).'
                     : 'Tantangan fokus riset BRIN yang dapat dieksplorasi.'}
                 </p>
               </div>
@@ -535,7 +564,7 @@ export default function ModuleManagementView({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs font-mono text-zinc-500">Nama Modul Tantangan *</Label>
+                  <Label className="text-xs font-mono text-zinc-500">Nama Tantangan *</Label>
                   <Input
                     value={zoneForm.name}
                     onChange={(e) => setZoneForm({
@@ -554,10 +583,39 @@ export default function ModuleManagementView({
                   <Input
                     value={zoneForm.slug}
                     onChange={(e) => setZoneForm({ ...zoneForm, slug: e.target.value })}
-                    placeholder="energi"
+                    placeholder="pangan-pertanian"
                     required
                     className="h-9 text-xs font-mono"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-mono text-zinc-500">Warna Tantangan (Hex)</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={zoneForm.color || '#996A12'}
+                        onChange={(e) => setZoneForm({ ...zoneForm, color: e.target.value })}
+                        className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-800 p-0.5 cursor-pointer bg-white"
+                      />
+                      <Input
+                        value={zoneForm.color}
+                        onChange={(e) => setZoneForm({ ...zoneForm, color: e.target.value })}
+                        placeholder="#996A12"
+                        className="h-9 text-xs font-mono flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <IconPicker
+                      label="Ikon Tantangan (MDI)"
+                      value={zoneForm.icon}
+                      onChange={(val) => setZoneForm({ ...zoneForm, icon: val })}
+                      placeholder="Pilih ikon (rice, chip, atom...)"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -576,7 +634,7 @@ export default function ModuleManagementView({
 
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
-                  <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Modul Aktif</span>
+                  <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Tantangan Aktif</span>
                   <input
                     type="checkbox"
                     checked={zoneForm.is_active}
@@ -609,7 +667,7 @@ export default function ModuleManagementView({
                 ) : (
                   <Check className="w-3.5 h-3.5" />
                 )}
-                {editingItem ? 'Simpan Perubahan' : 'Tambah Modul'}
+                {editingItem ? 'Simpan Perubahan' : (activeTab === 'personas' ? 'Tambah Peran' : 'Tambah Tantangan')}
               </Button>
             </div>
           </form>
@@ -620,9 +678,9 @@ export default function ModuleManagementView({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Modul</AlertDialogTitle>
+            <AlertDialogTitle>Hapus {activeTab === 'personas' ? 'Peran' : 'Tantangan'}</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus modul "{itemToDelete?.name}"?
+              Apakah Anda yakin ingin menghapus {activeTab === 'personas' ? 'peran' : 'tantangan'} "{itemToDelete?.name}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

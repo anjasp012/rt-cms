@@ -47,7 +47,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           Dashboard
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Statistik interaksi pengunjung pameran: frekuensi pemilihan Modul Pengguna, Modul Tantangan, dan kombinasi terpopuler.
+          Statistik interaksi pengunjung pameran: frekuensi pemilihan Peran, Tantangan, dan kombinasi terpopuler.
         </p>
       </div>
 
@@ -57,13 +57,13 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           <div className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                Modul Pengguna
+                Peran
               </span>
               <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 font-mono animate-counter">
                 {summary.total_persona_types || 8}
               </div>
               <span className="text-[11px] text-zinc-400 font-mono block">
-                Modul Pengguna Aktif
+                Peran Aktif
               </span>
             </div>
             <div className="p-2.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
@@ -76,13 +76,13 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           <div className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                Modul Tantangan
+                Tantangan
               </span>
               <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 font-mono animate-counter">
                 {summary.total_zone_types || 9}
               </div>
               <span className="text-[11px] text-zinc-400 font-mono block">
-                Modul Tantangan Aktif
+                Tantangan Aktif
               </span>
             </div>
             <div className="p-2.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
@@ -113,17 +113,17 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
 
       {/* 2 Column Grid: Persona Usage vs Zone Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Modul Pengguna Usage List */}
+        {/* Peran Usage List */}
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm">
           <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <div>
                 <CardTitle className="text-sm font-semibold">
-                  Histori Pemakaian Modul Pengguna
+                  Histori Pemakaian Peran
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Berapa kali modul pengguna dipilih pengunjung
+                  Berapa kali peran dipilih pengunjung
                 </CardDescription>
               </div>
             </div>
@@ -157,17 +157,17 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           </CardContent>
         </Card>
 
-        {/* Modul Tantangan Usage List */}
+        {/* Tantangan Usage List */}
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm">
           <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <div>
                 <CardTitle className="text-sm font-semibold">
-                  Histori Pemakaian Modul Tantangan
+                  Histori Pemakaian Tantangan
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Berapa kali modul tantangan dipilih pengunjung
+                  Berapa kali tantangan dipilih pengunjung
                 </CardDescription>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Pasangan Modul Pengguna + Modul Tantangan yang paling diminati pengunjung
+              Pasangan Peran + Tantangan yang paling diminati pengunjung
             </CardDescription>
           </CardHeader>
           <CardContent className="p-5 pt-0">

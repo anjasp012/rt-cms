@@ -58,44 +58,44 @@ export default function SuggestionDetailModal({ suggestion, open, onOpenChange }
           {/* Context Info Box */}
           <div className="grid grid-cols-2 gap-2 p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 font-mono">
             <div>
-              <span className="text-[11px] text-zinc-400 block">Pengunjung:</span>
+              <span className="text-[11px] text-zinc-400 block">Peran (Persona):</span>
               <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {suggestion.visitor_name || 'Anonim'} {suggestion.age_range ? `(${suggestion.age_range})` : ''}
+                {suggestion.persona_name || '-'}
               </span>
             </div>
             <div>
-              <span className="text-[11px] text-zinc-400 block">Modul & Token Pilihan:</span>
-              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {suggestion.persona_name || '-'} &bull; <span className="text-blue-600 dark:text-blue-400">{suggestion.zone_name || '-'}</span>
+              <span className="text-[11px] text-zinc-400 block">Tantangan (Challenge):</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                {suggestion.challenge_name || suggestion.zone_name || '-'}
               </span>
             </div>
           </div>
 
-          {/* Topic Wanted Box with Copy */}
+          {/* Title Box with Copy */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-mono text-zinc-500">Pesan Usulan Riset yang Dicari</Label>
+              <Label className="text-xs font-mono text-zinc-500">Judul Usulan Riset</Label>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 text-[11px] px-2 text-zinc-400 hover:text-zinc-200"
-                onClick={() => copyText(suggestion.topic_wanted)}
+                onClick={() => copyText(suggestion.title || suggestion.topic_wanted)}
               >
                 {copied ? <Check className="w-3 h-3 mr-1 text-emerald-500" /> : <Copy className="w-3 h-3 mr-1" />}
                 {copied ? 'Tersalin' : 'Salin'}
               </Button>
             </div>
-            <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-zinc-950/70 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed font-sans select-text">
-              {suggestion.topic_wanted}
+            <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-zinc-950/70 border border-zinc-200 dark:border-zinc-800 text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-relaxed font-sans select-text">
+              {suggestion.title || suggestion.topic_wanted}
             </div>
           </div>
 
-          {/* Feedback */}
-          {suggestion.feedback && (
+          {/* Deskripsi */}
+          {(suggestion.deskripsi || suggestion.feedback) && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-mono text-zinc-500">Masukan / Ide Tambahan</Label>
-              <div className="p-2.5 rounded-md bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 italic">
-                "{suggestion.feedback}"
+              <Label className="text-xs font-mono text-zinc-500">Deskripsi Usulan</Label>
+              <div className="p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                {suggestion.deskripsi || suggestion.feedback}
               </div>
             </div>
           )}

@@ -186,63 +186,77 @@ export async function deletePersona(id) {
   });
 }
 
-export async function fetchZones() {
-  return request(`${API_BASE}/admin/zones`);
+// 🏛️ 3b. CRUD TANTANGAN (CHALLENGES / ZONES)
+export async function fetchChallenges() {
+  return request(`${API_BASE}/admin/challenges`);
 }
 
-export async function createZone(payload) {
-  return request(`${API_BASE}/admin/zones`, {
+export async function createChallenge(payload) {
+  return request(`${API_BASE}/admin/challenges`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
-export async function updateZone(id, payload) {
-  return request(`${API_BASE}/admin/zones/${id}`, {
+export async function updateChallenge(id, payload) {
+  return request(`${API_BASE}/admin/challenges/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 }
 
-export async function deleteZone(id) {
-  return request(`${API_BASE}/admin/zones/${id}`, {
+export async function deleteChallenge(id) {
+  return request(`${API_BASE}/admin/challenges/${id}`, {
     method: 'DELETE',
   });
 }
 
-// 💡 4. KATALOG INOVASI
-export async function fetchInnovations(zone_id = null) {
-  let url = `${API_BASE}/admin/innovations`;
-  if (zone_id) url += `?zone_id=${zone_id}`;
+// Aliases for backward compatibility
+export const fetchZones = fetchChallenges;
+export const createZone = createChallenge;
+export const updateZone = updateChallenge;
+export const deleteZone = deleteChallenge;
+
+// 💡 4. KATALOG SOLUSI (SOLUTIONS / INNOVATIONS)
+export async function fetchSolutions(challenge_id = null) {
+  let url = `${API_BASE}/admin/solutions`;
+  if (challenge_id) url += `?challenge_id=${challenge_id}`;
   return request(url);
 }
 
-export async function createInnovation(payload) {
-  return request(`${API_BASE}/admin/innovations`, {
+export async function createSolution(payload) {
+  return request(`${API_BASE}/admin/solutions`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
-export async function updateInnovation(id, payload) {
-  return request(`${API_BASE}/admin/innovations/${id}`, {
+export async function updateSolution(id, payload) {
+  return request(`${API_BASE}/admin/solutions/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 }
 
-export async function deleteInnovation(id) {
-  return request(`${API_BASE}/admin/innovations/${id}`, {
+export async function deleteSolution(id) {
+  return request(`${API_BASE}/admin/solutions/${id}`, {
     method: 'DELETE',
   });
 }
 
-export async function updateInnovationRelevance(id, mappings) {
-  return request(`${API_BASE}/admin/innovations/${id}/relevance`, {
+export async function updateSolutionRelevance(id, mappings) {
+  return request(`${API_BASE}/admin/solutions/${id}/relevance`, {
     method: 'POST',
     body: JSON.stringify(mappings),
   });
 }
+
+// Aliases for backward compatibility
+export const fetchInnovations = fetchSolutions;
+export const createInnovation = createSolution;
+export const updateInnovation = updateSolution;
+export const deleteInnovation = deleteSolution;
+export const updateInnovationRelevance = updateSolutionRelevance;
 
 // 📁 5. FILE UPLOAD
 export async function uploadFile(file) {

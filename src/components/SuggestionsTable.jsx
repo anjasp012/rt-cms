@@ -207,10 +207,9 @@ export default function SuggestionsTable({
                   />
                 </th>
                 <th className="p-3 w-10 text-center">#</th>
-                <th className="p-3 text-left">Topik Riset yang Dicari</th>
-                <th className="p-3 w-36 text-left">Pengunjung</th>
-                <th className="p-3 w-36 text-left">Modul Pengguna</th>
-                <th className="p-3 w-36 text-left">Modul Tantangan</th>
+                <th className="p-3 text-left">Judul Usulan & Deskripsi</th>
+                <th className="p-3 w-44 text-left">Peran (Persona)</th>
+                <th className="p-3 w-44 text-left">Tantangan (Challenge)</th>
                 <th className="p-3 w-32 text-right">Waktu Masuk</th>
                 <th className="p-3 w-20 text-center">Aksi</th>
               </tr>
@@ -218,14 +217,14 @@ export default function SuggestionsTable({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
                     <span>Memuat data usulan...</span>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
                     <MessageSquare className="w-7 h-7 mx-auto mb-2 text-zinc-400 opacity-50" />
                     <span>Tidak ada data usulan riset</span>
                   </td>
@@ -249,22 +248,12 @@ export default function SuggestionsTable({
                       {idx + 1}
                     </td>
                     <td className="p-3">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-relaxed">
-                        {item.topic_wanted}
+                      <div className="font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-relaxed">
+                        {item.title || item.topic_wanted}
                       </div>
-                      {item.feedback && (
-                        <div className="text-[11px] text-zinc-400 line-clamp-1 italic mt-0.5">
-                          "{item.feedback}"
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <div className="text-zinc-800 dark:text-zinc-200 font-medium">
-                        {item.visitor_name || 'Anonim'}
-                      </div>
-                      {item.age_range && (
-                        <div className="text-[11px] text-zinc-400 font-mono">
-                          {item.age_range}
+                      {(item.deskripsi || item.feedback) && (
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5">
+                          {item.deskripsi || item.feedback}
                         </div>
                       )}
                     </td>
@@ -275,7 +264,7 @@ export default function SuggestionsTable({
                     </td>
                     <td className="p-3">
                       <span className="font-mono text-blue-600 dark:text-blue-400">
-                        {item.zone_name || '-'}
+                        {item.challenge_name || item.zone_name || '-'}
                       </span>
                     </td>
                     <td className="p-3 text-right font-mono text-[11px] text-zinc-400 whitespace-nowrap">

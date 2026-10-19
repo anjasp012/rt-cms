@@ -90,8 +90,8 @@ export default function Dashboard({ username, onLogout }) {
   const isFetchingRef = useRef(false)
 
   const viewTitles = {
-    innovations: 'Daftar Penelitian & Hasil Riset BRIN',
-    modules: 'Kelola Modul Meja Interaktif',
+    innovations: 'Daftar Solusi & Hasil Riset BRIN',
+    modules: 'Kelola Peran & Tantangan',
     usage: 'Dashboard',
     suggestions: 'Usulan Riset Pengunjung',
   }
@@ -281,13 +281,13 @@ export default function Dashboard({ username, onLogout }) {
     },
     {
       id: 'innovations',
-      label: 'Daftar Penelitian',
+      label: 'Daftar Solusi',
       icon: Lightbulb,
       count: innovations.length,
     },
     {
       id: 'modules',
-      label: 'Kelola Modul',
+      label: 'Peran & Tantangan',
       icon: Compass,
       count: personas.length + zones.length,
     },

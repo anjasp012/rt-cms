@@ -16,7 +16,7 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
 
   const stats = [
     {
-      title: 'Total Inovasi',
+      title: 'Total Solusi',
       value: total_innovations,
       description: 'Katalog riset terdaftar',
       icon: Lightbulb,
@@ -30,16 +30,16 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
       textColor: 'text-zinc-900 dark:text-zinc-100',
     },
     {
-      title: 'Modul Pengguna (Slot 1)',
+      title: 'Peran (Slot 1)',
       value: total_personas,
-      description: '8 Persona terdaftar',
+      description: '8 Peran terdaftar',
       icon: Users,
       textColor: 'text-zinc-900 dark:text-zinc-100',
     },
     {
-      title: 'Modul Tantangan (Slot 2)',
+      title: 'Tantangan (Slot 2)',
       value: total_zones,
-      description: 'Modul tantangan BRIN',
+      description: 'Tantangan fokus BRIN',
       icon: Compass,
       textColor: 'text-zinc-900 dark:text-zinc-100',
     },
@@ -153,7 +153,7 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Modul Tantangan Terpopuler
+                Tantangan Terpopuler
               </h4>
             </div>
 
@@ -180,7 +180,7 @@ export default function StatsCards({ analytics, showFullCharts = false }) {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Modul Pengguna Terpopuler
+                Peran Terpopuler
               </h4>
             </div>
 

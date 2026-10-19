@@ -26,15 +26,16 @@ export function exportSuggestionsToExcel(data, customTitle = 'Daftar Usulan Rise
 
       const rowBg = index % 2 === 0 ? '#FFFFFF' : '#F8FAFC'
 
-      const safeTopic = (item.topic_wanted || '')
+      const safeTopic = (item.title || item.topic_wanted || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/\n/g, '<br/>')
 
-      const safeFeedback = item.feedback
-        ? `<div style="font-size: 9pt; color: #64748B; font-style: italic; margin-top: 4px;">Feedback: "${item.feedback
+      const feedbackText = item.deskripsi || item.feedback
+      const safeFeedback = feedbackText
+        ? `<div style="font-size: 9pt; color: #64748B; font-style: italic; margin-top: 4px;">Deskripsi: "${feedbackText
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')}"</div>`
@@ -50,13 +51,10 @@ export function exportSuggestionsToExcel(data, customTitle = 'Daftar Usulan Rise
             ${safeFeedback}
           </td>
           <td style="border: 1px solid #CBD5E1; padding: 10px 10px; font-family: 'Segoe UI', Calibri, Arial; font-size: 10pt; color: #334155; text-align: left;">
-            ${item.visitor_name || 'Anonim'} ${item.age_range ? `(${item.age_range})` : ''}
-          </td>
-          <td style="border: 1px solid #CBD5E1; padding: 10px 10px; font-family: 'Segoe UI', Calibri, Arial; font-size: 10pt; color: #334155; text-align: left;">
             ${item.persona_name || '-'}
           </td>
           <td style="border: 1px solid #CBD5E1; padding: 10px 10px; font-family: 'Segoe UI', Calibri, Arial; font-size: 10pt; color: #334155; text-align: left;">
-            ${item.zone_name || '-'}
+            ${item.challenge_name || item.zone_name || '-'}
           </td>
           <td style="border: 1px solid #CBD5E1; padding: 10px 10px; font-family: 'Segoe UI', Calibri, Arial; font-size: 11pt; color: #475569; text-align: center; white-space: nowrap;">
             ${tgl}
@@ -136,33 +134,32 @@ export function exportSuggestionsToExcel(data, customTitle = 'Daftar Usulan Rise
     <body>
       <table>
         <tr>
-          <th colspan="7" class="title-banner">
+          <th colspan="6" class="title-banner">
             DAFTAR USULAN RISET PENGUNJUNG · RESEARCH TABLE BRIN
           </th>
         </tr>
         <tr>
-          <td colspan="7" style="height: 10px;"></td>
+          <td colspan="6" style="height: 10px;"></td>
         </tr>
 
         <tr>
           <td class="meta-label">Waktu Unduh:</td>
           <td class="meta-val" colspan="2">${dateFormatted}, ${timeFormatted} WIB</td>
           <td class="meta-label">Total Data:</td>
-          <td class="meta-val" colspan="3">${data.length} Baris Usulan</td>
+          <td class="meta-val" colspan="2">${data.length} Baris Usulan</td>
         </tr>
         <tr>
-          <td colspan="7" style="height: 12px;"></td>
+          <td colspan="6" style="height: 12px;"></td>
         </tr>
 
         <thead>
           <tr>
             <th class="th-header" style="width: 50px;">No</th>
-            <th class="th-header" style="width: 380px;">Topik Usulan Riset & Ide Pengunjung</th>
-            <th class="th-header" style="width: 180px;">Nama Pengunjung & Usia</th>
-            <th class="th-header" style="width: 160px;">Modul Pengguna</th>
-            <th class="th-header" style="width: 160px;">Modul Tantangan</th>
-            <th class="th-header" style="width: 130px;">Tanggal Masuk</th>
-            <th class="th-header" style="width: 100px;">Waktu</th>
+            <th class="th-header" style="width: 450px;">Judul Usulan & Deskripsi</th>
+            <th class="th-header" style="width: 200px;">Peran (Persona)</th>
+            <th class="th-header" style="width: 200px;">Tantangan (Challenge)</th>
+            <th class="th-header" style="width: 140px;">Tanggal Masuk</th>
+            <th class="th-header" style="width: 110px;">Waktu</th>
           </tr>
         </thead>
 
