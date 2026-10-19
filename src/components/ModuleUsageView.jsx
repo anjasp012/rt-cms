@@ -130,7 +130,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           </CardHeader>
           <CardContent className="p-5 pt-0 space-y-3">
             {persona_stats.map((p, idx) => {
-              const pct = Math.round((p.usage_count / maxPersonaUsage) * 100)
+              const pct = maxPersonaUsage > 0 ? Math.round((p.usage_count / maxPersonaUsage) * 100) : 0
               return (
                 <div key={p.id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-mono">
@@ -139,7 +139,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
                       <span className="font-medium text-zinc-800 dark:text-zinc-200 font-sans">{p.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-zinc-400">{p.suggestion_count} usulan</span>
+                      <span className="text-[11px] text-zinc-400">{p.solution_count ?? p.solutions_count ?? 0} riset</span>
                       <Badge variant="default" className="font-mono">
                         {p.usage_count}x dipakai
                       </Badge>
@@ -148,7 +148,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
                   <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.max(pct, 5)}%` }}
+                      style={{ width: `${p.usage_count > 0 ? Math.max(pct, 5) : 0}%` }}
                     />
                   </div>
                 </div>
@@ -174,7 +174,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
           </CardHeader>
           <CardContent className="p-5 pt-0 space-y-3">
             {zone_stats.map((z, idx) => {
-              const pct = Math.round((z.usage_count / maxZoneUsage) * 100)
+              const pct = maxZoneUsage > 0 ? Math.round((z.usage_count / maxZoneUsage) * 100) : 0
               return (
                 <div key={z.id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-mono">
@@ -187,7 +187,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
                       <span className="font-medium text-zinc-800 dark:text-zinc-200 font-sans">{z.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-zinc-400">{z.suggestion_count} usulan</span>
+                      <span className="text-[11px] text-zinc-400">{z.solution_count ?? z.solutions_count ?? 0} riset</span>
                       <Badge variant="approved" className="font-mono">
                         {z.usage_count}x dipakai
                       </Badge>
@@ -197,7 +197,7 @@ export default function ModuleUsageView({ moduleUsage, loading }) {
                     <div
                       className="h-full rounded-full transition-all duration-500 bg-blue-500"
                       style={{
-                        width: `${Math.max(pct, 5)}%`
+                        width: `${z.usage_count > 0 ? Math.max(pct, 5) : 0}%`
                       }}
                     />
                   </div>
