@@ -31,12 +31,8 @@ import {
   Loader2, 
   Layers,
   Palette,
-  Sparkles,
-  Upload,
-  X
+  Sparkles
 } from 'lucide-react'
-import { uploadFile } from '@/lib/api'
-import { getImageUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import IconPicker from '@/components/ui/IconPicker'
 
@@ -57,14 +53,12 @@ export default function ModuleManagementView({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-
   // Form states
   const [personaForm, setPersonaForm] = useState({
     name: '',
     slug: '',
+    icon: 'sprout',
     tagline: '',
-    icon_url: '',
     is_active: true
   })
 
@@ -74,7 +68,6 @@ export default function ModuleManagementView({
     color: '#996A12',
     icon: 'rice',
     description: '',
-    icon_url: '',
     is_active: true
   })
 
@@ -84,8 +77,8 @@ export default function ModuleManagementView({
       setPersonaForm({
         name: '',
         slug: '',
+        icon: 'sprout',
         tagline: '',
-        icon_url: '',
         is_active: true
       })
     } else {
@@ -95,7 +88,6 @@ export default function ModuleManagementView({
         color: '#996A12',
         icon: 'rice',
         description: '',
-        icon_url: '',
         is_active: true
       })
     }
@@ -108,8 +100,8 @@ export default function ModuleManagementView({
       setPersonaForm({
         name: item.name || '',
         slug: item.slug || '',
+        icon: item.icon || 'sprout',
         tagline: item.tagline || '',
-        icon_url: item.icon_url || '',
         is_active: item.is_active ?? true
       })
     } else {
@@ -117,9 +109,8 @@ export default function ModuleManagementView({
         name: item.name || '',
         slug: item.slug || '',
         color: item.color || '#996A12',
-        icon: item.icon || '',
+        icon: item.icon || 'rice',
         description: item.description || '',
-        icon_url: item.icon_url || '',
         is_active: item.is_active ?? true
       })
     }
@@ -169,26 +160,6 @@ export default function ModuleManagementView({
     return val.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')
   }
 
-  const handleFileUpload = async (e, type) => {
-    const file = e.target.files[0]
-    if (!file) return
-    
-    setUploadingImage(true)
-    try {
-      const res = await uploadFile(file)
-      const savedUrl = res.relative_url || res.url
-      if (type === 'persona') {
-        setPersonaForm(prev => ({ ...prev, icon_url: savedUrl }))
-      } else {
-        setZoneForm(prev => ({ ...prev, icon_url: savedUrl }))
-      }
-      toast.success('Ikon berhasil diunggah')
-    } catch (err) {
-      toast.error(err.message || 'Gagal mengunggah ikon')
-    } finally {
-      setUploadingImage(false)
-    }
-  }
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -246,22 +217,9 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {p.icon_url && (p.icon_url.startsWith('http') || p.icon_url.startsWith('/') || p.icon_url.includes('.')) ? (
-                      <img 
-                        src={getImageUrl(p.icon_url)} 
-                        alt="" 
-                        className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : p.icon ? (
-                      <div className="w-6 h-6 rounded bg-emerald-50 dark:bg-zinc-800 flex items-center justify-center text-emerald-600">
-                        <i className={`mdi mdi-${p.icon} text-base`}></i>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                        <Users className="w-3.5 h-3.5 text-zinc-400" />
-                      </div>
-                    )}
+                    <div className="w-7 h-7 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm flex-shrink-0">
+                      <i className={`mdi mdi-${p.icon || 'account'} text-lg`}></i>
+                    </div>
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
                       {p.name}
                     </span>
@@ -311,22 +269,12 @@ export default function ModuleManagementView({
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {z.icon_url && (z.icon_url.startsWith('http') || z.icon_url.startsWith('/') || z.icon_url.includes('.')) ? (
-                      <img 
-                        src={getImageUrl(z.icon_url)} 
-                        alt="" 
-                        className="w-6 h-6 rounded object-cover border border-zinc-200 dark:border-zinc-800 bg-white" 
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : z.icon ? (
-                      <div className="w-6 h-6 rounded bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-blue-600">
-                        <i className={`mdi mdi-${z.icon} text-base`}></i>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                        <Compass className="w-3.5 h-3.5 text-zinc-400" />
-                      </div>
-                    )}
+                    <div 
+                      className="w-7 h-7 rounded-md flex items-center justify-center shadow-sm text-white flex-shrink-0"
+                      style={{ backgroundColor: z.color || '#996A12' }}
+                    >
+                      <i className={`mdi mdi-${z.icon || 'compass'} text-base`}></i>
+                    </div>
                     <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
                       {z.name}
                     </span>
@@ -406,59 +354,6 @@ export default function ModuleManagementView({
           <form onSubmit={handleFormSubmit} className="p-6 space-y-4 text-xs">
             {activeTab === 'personas' ? (
               <>
-                <div className="space-y-2">
-                  <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
-
-                  {/* Filament-style Preview on TOP */}
-                  {personaForm.icon_url ? (
-                    <div className="relative group w-20 h-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1 shadow-sm">
-                      <div className="relative w-full h-full rounded overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-                        <img 
-                          src={getImageUrl(personaForm.icon_url)} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }} 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setPersonaForm(prev => ({ ...prev, icon_url: '' }))}
-                          className="absolute top-1 right-1 p-1 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
-                          title="Hapus ikon"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col items-center justify-center text-center p-1">
-                      <Users className="w-5 h-5 text-zinc-400 mb-0.5" />
-                      <span className="text-[9px] text-zinc-400 font-mono">No icon</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={personaForm.icon_url}
-                      onChange={(e) => setPersonaForm({ ...personaForm, icon_url: e.target.value })}
-                      placeholder="URL gambar atau upload"
-                      className="h-9 text-xs font-mono flex-1"
-                    />
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, 'persona')}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        disabled={uploadingImage}
-                      />
-                      <Button type="button" variant="secondary" className="h-9 text-xs gap-1.5" disabled={uploadingImage}>
-                        {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-1">
                   <Label className="text-xs font-mono text-zinc-500">Nama Modul Pengguna (Persona) *</Label>
                   <Input
@@ -485,6 +380,15 @@ export default function ModuleManagementView({
                   />
                 </div>
 
+                <div>
+                  <IconPicker
+                    label="Ikon Peran (MDI)"
+                    value={personaForm.icon}
+                    onChange={(val) => setPersonaForm({ ...personaForm, icon: val })}
+                    placeholder="Pilih ikon (sprout, fish, factory...)"
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <Label className="text-xs font-mono text-zinc-500">Tagline / Deskripsi Profil</Label>
                   <textarea
@@ -495,8 +399,6 @@ export default function ModuleManagementView({
                     className="w-full text-xs p-2.5 rounded-md bg-white dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none leading-relaxed"
                   />
                 </div>
-
-
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Modul Aktif</span>
@@ -510,59 +412,6 @@ export default function ModuleManagementView({
               </>
             ) : (
               <>
-                <div className="space-y-2">
-                  <Label className="text-xs font-mono text-zinc-500">Ikon / Thumbnail (Opsional)</Label>
-
-                  {/* Filament-style Preview on TOP */}
-                  {zoneForm.icon_url ? (
-                    <div className="relative group w-20 h-20 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1 shadow-sm">
-                      <div className="relative w-full h-full rounded overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-                        <img 
-                          src={getImageUrl(zoneForm.icon_url)} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }} 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setZoneForm(prev => ({ ...prev, icon_url: '' }))}
-                          className="absolute top-1 right-1 p-1 rounded-full bg-zinc-900/80 hover:bg-rose-600 text-white shadow transition-colors"
-                          title="Hapus ikon"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col items-center justify-center text-center p-1">
-                      <Compass className="w-5 h-5 text-zinc-400 mb-0.5" />
-                      <span className="text-[9px] text-zinc-400 font-mono">No icon</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={zoneForm.icon_url}
-                      onChange={(e) => setZoneForm({ ...zoneForm, icon_url: e.target.value })}
-                      placeholder="URL gambar atau upload"
-                      className="h-9 text-xs font-mono flex-1"
-                    />
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, 'zone')}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        disabled={uploadingImage}
-                      />
-                      <Button type="button" variant="secondary" className="h-9 text-xs gap-1.5" disabled={uploadingImage}>
-                        {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-1">
                   <Label className="text-xs font-mono text-zinc-500">Nama Tantangan *</Label>
                   <Input
@@ -628,10 +477,6 @@ export default function ModuleManagementView({
                     className="w-full text-xs p-2.5 rounded-md bg-white dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none leading-relaxed"
                   />
                 </div>
-
-
-
-
 
                 <div className="flex items-center justify-between p-3 rounded-md bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800">
                   <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">Status Tantangan Aktif</span>
