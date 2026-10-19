@@ -41,6 +41,8 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
     title: '',
     slug: '',
     year: new Date().getFullYear(),
+    writer: '',
+    publication_media: '',
     research_center: '',
     journal_publication: '',
     doi: '',
@@ -75,8 +77,10 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         title: innovation.title || '',
         slug: innovation.slug || '',
         year: innovation.year || 2025,
-        research_center: innovation.research_center || '',
-        journal_publication: innovation.journal_publication || '',
+        writer: innovation.writer || innovation.author || '',
+        publication_media: innovation.publication_media || innovation.journal_publication || '',
+        research_center: innovation.research_center || innovation.satker || '',
+        journal_publication: innovation.journal_publication || innovation.publication_media || '',
         doi: innovation.doi || '',
         abstract_url: innovation.abstract_url || '',
         access_type: innovation.access_type || 'Open access (CC BY-SA 4.0)',
@@ -202,8 +206,10 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
         aspect: formData.aspect.trim() || null,
         aspect_icon: formData.aspect_icon.trim() || null,
         summary: formData.summary.trim() || null,
-        research_center: formData.research_center.trim() || null,
-        journal_publication: formData.journal_publication.trim() || null,
+        writer: formData.writer ? formData.writer.trim() : null,
+        publication_media: formData.publication_media ? formData.publication_media.trim() : null,
+        research_center: formData.research_center ? formData.research_center.trim() : null,
+        journal_publication: formData.journal_publication ? formData.journal_publication.trim() : (formData.publication_media ? formData.publication_media.trim() : null),
         doi: formData.doi.trim() || null,
         abstract_url: formData.abstract_url.trim() || null,
         access_type: formData.access_type.trim() || null,
@@ -497,23 +503,42 @@ export default function InnovationFormView({ innovation, zones, personas, onSave
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-mono text-zinc-500">Pusat Riset Penulis BRIN</Label>
-            <Input
-              value={formData.research_center}
-              onChange={(e) => setFormData({ ...formData, research_center: e.target.value })}
-              placeholder="Contoh: Pusat Riset Peternakan; Direktorat Pengelolaan Laboratorium, Fasilitas Riset..."
-              className="h-9"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono text-zinc-500">Penulis / Writer</Label>
+              <Input
+                value={formData.writer}
+                onChange={(e) => setFormData({ ...formData, writer: e.target.value })}
+                placeholder="Contoh: Bayu Andri Atmoko, Dr. Budi Santoso..."
+                className="h-9"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono text-zinc-500">Media Publikasi / Publication Media</Label>
+              <Input
+                value={formData.publication_media}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  publication_media: e.target.value,
+                  journal_publication: e.target.value 
+                })}
+                placeholder="Contoh: Tropical Animal Science Journal"
+                className="h-9"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-mono text-zinc-500">Jurnal / Terbitan</Label>
+              <Label className="text-xs font-mono text-zinc-500">Pusat Riset / Satker (Research Center)</Label>
               <Input
-                value={formData.journal_publication}
-                onChange={(e) => setFormData({ ...formData, journal_publication: e.target.value })}
-                placeholder="Contoh: Tropical Animal Science Journal"
+                value={formData.research_center}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  research_center: e.target.value 
+                })}
+                placeholder="Contoh: Pusat Riset Peternakan..."
                 className="h-9"
               />
             </div>

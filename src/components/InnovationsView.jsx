@@ -262,9 +262,25 @@ export default function InnovationsView({
                             {item.title}
                           </div>
 
-                          {item.research_center && (
+                          {(item.writer || item.publication_media) && (
+                            <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                              {item.writer && (
+                                <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                  ✍️ {item.writer}
+                                </span>
+                              )}
+                              {item.writer && item.publication_media && <span>•</span>}
+                              {item.publication_media && (
+                                <span className="italic text-zinc-500">
+                                  📰 {item.publication_media}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {(item.research_center || item.satker) && (
                             <p className="text-[11px] text-zinc-400 dark:text-zinc-500 line-clamp-1">
-                              {item.research_center}
+                              🏢 {item.research_center || item.satker}
                             </p>
                           )}
                         </div>
@@ -439,9 +455,15 @@ export default function InnovationsView({
                       <span className="text-zinc-400 font-mono">Akses:</span>{' '}
                       <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.access_type || '-'}</span>
                     </div>
+                    {(detailItem.writer || detailItem.author) && (
+                      <div className="sm:col-span-2">
+                        <span className="text-zinc-400 font-mono">Penulis / Writer:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.writer || detailItem.author}</span>
+                      </div>
+                    )}
                     <div className="sm:col-span-2">
-                      <span className="text-zinc-400 font-mono">Jurnal / Terbitan:</span>{' '}
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.journal_publication || '-'}</span>
+                      <span className="text-zinc-400 font-mono">Media Publikasi:</span>{' '}
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.publication_media || detailItem.journal_publication || '-'}</span>
                     </div>
                     {detailItem.doi && (
                       <div className="sm:col-span-2">
@@ -463,10 +485,10 @@ export default function InnovationsView({
                         </a>
                       </div>
                     )}
-                    {detailItem.research_center && (
+                    {(detailItem.research_center || detailItem.satker) && (
                       <div className="sm:col-span-2">
-                        <span className="text-zinc-400 font-mono">Pusat Riset Penulis:</span>{' '}
-                        <p className="font-medium text-zinc-800 dark:text-zinc-200 mt-0.5">{detailItem.research_center}</p>
+                        <span className="text-zinc-400 font-mono">Pusat Riset / Satker:</span>{' '}
+                        <p className="font-medium text-zinc-800 dark:text-zinc-200 mt-0.5">{detailItem.research_center || detailItem.satker}</p>
                       </div>
                     )}
                     {detailItem.author_proof && (
