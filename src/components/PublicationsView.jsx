@@ -68,6 +68,7 @@ export default function PublicationsView({
   loading = false,
   onSave,
   onDelete,
+  onReload,
 }) {
   const [search, setSearch] = useState('')
   const [filterCoverage, setFilterCoverage] = useState('ALL')
@@ -1016,8 +1017,11 @@ export default function PublicationsView({
         onClose={() => setImportModalOpen(false)}
         onSuccess={() => {
           setImportModalOpen(false)
-          // Parent reload can be triggered if needed or will trigger on next query
-          window.location.reload()
+          if (onReload) {
+            onReload()
+          } else {
+            window.location.reload()
+          }
         }}
       />
 
