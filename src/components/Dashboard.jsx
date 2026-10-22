@@ -573,6 +573,7 @@ export default function Dashboard({ username, onLogout }) {
               loading={loading}
               onSave={handleSavePublication}
               onDelete={handleDeletePublication}
+              onReload={() => loadData(false)}
             />
           )}
 

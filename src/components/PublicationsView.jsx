@@ -32,7 +32,16 @@ import {
   MapPin,
   Globe,
   X,
+  FileSpreadsheet,
+  Upload,
+  FileText,
+  Layers,
+  Sparkles,
+  Info
 } from 'lucide-react'
+import { exportPublicationsToExcel } from '@/lib/excelExport'
+import PublicationImportModal from './PublicationImportModal'
+import { toast } from 'sonner'
 
 /* ─────────────────────────────────────────────────────────────
    Empty form state
@@ -64,6 +73,7 @@ export default function PublicationsView({
   const [filterCoverage, setFilterCoverage] = useState('ALL')
   const [filterSource, setFilterSource] = useState('ALL')
   const [filterYear, setFilterYear] = useState('ALL')
+  const [filterField, setFilterField] = useState('ALL')
 
   // Modals
   const [detailItem, setDetailItem] = useState(null)
@@ -72,6 +82,7 @@ export default function PublicationsView({
   const [editingId, setEditingId] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  const [importModalOpen, setImportModalOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
 
@@ -91,12 +102,18 @@ export default function PublicationsView({
     return vals.sort((a, b) => b - a)
   }, [publications])
 
+  const fieldOptions = useMemo(() => {
+    const vals = [...new Set(publications.map(p => p.field).filter(Boolean))]
+    return vals.sort()
+  }, [publications])
+
   /* ── Filtered list ── */
   const filtered = useMemo(() => {
     return publications.filter(pub => {
       if (filterCoverage !== 'ALL' && pub.coverage !== filterCoverage) return false
       if (filterSource !== 'ALL' && pub.source !== filterSource) return false
       if (filterYear !== 'ALL' && String(pub.year) !== filterYear) return false
+      if (filterField !== 'ALL' && pub.field !== filterField) return false
       if (!search.trim()) return true
       const q = search.toLowerCase()
       return (
@@ -107,10 +124,11 @@ export default function PublicationsView({
         pub.field?.toLowerCase().includes(q) ||
         pub.province?.toLowerCase().includes(q) ||
         pub.region?.toLowerCase().includes(q) ||
-        pub.source?.toLowerCase().includes(q)
+        pub.source?.toLowerCase().includes(q) ||
+        pub.publication_media?.toLowerCase().includes(q)
       )
     })
-  }, [publications, search, filterCoverage, filterSource, filterYear])
+  }, [publications, search, filterCoverage, filterSource, filterYear, filterField])
 
   /* ── Form helpers ── */
   const openCreate = () => {
@@ -145,7 +163,10 @@ export default function PublicationsView({
   }
 
   const handleSubmit = async () => {
-    if (!formData.title.trim()) return
+    if (!formData.title.trim()) {
+      toast.error('Judul publikasi wajib diisi')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -173,16 +194,26 @@ export default function PublicationsView({
     setItemToDelete(null)
   }
 
+  const handleExport = () => {
+    const dataToExport = filtered.length > 0 ? filtered : publications
+    if (dataToExport.length === 0) {
+      toast.error('Tidak ada data publikasi untuk diexport')
+      return
+    }
+    exportPublicationsToExcel(dataToExport)
+    toast.success(`${dataToExport.length} data publikasi berhasil diexport ke Excel`)
+  }
+
   /* ─────────────────────────────────────────────────────────
      RENDER
   ───────────────────────────────────────────────────────── */
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* ── Top Filter and Actions Bar ── */}
+      {/* ── Top Filter and Actions Bar (Consistent with InnovationsView) ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 flex-1">
 
-          {/* Search */}
+          {/* Search Bar */}
           <div className="relative min-w-[240px] flex-1 max-w-md">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <Input
@@ -202,7 +233,7 @@ export default function PublicationsView({
             )}
           </div>
 
-          {/* Coverage filter */}
+          {/* Cakupan filter */}
           <div className="relative">
             <select
               value={filterCoverage}
@@ -217,7 +248,7 @@ export default function PublicationsView({
             <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
           </div>
 
-          {/* Source filter */}
+          {/* Sumber filter */}
           <div className="relative">
             <select
               value={filterSource}
@@ -232,7 +263,7 @@ export default function PublicationsView({
             <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
           </div>
 
-          {/* Year filter */}
+          {/* Tahun filter */}
           <div className="relative">
             <select
               value={filterYear}
@@ -247,8 +278,25 @@ export default function PublicationsView({
             <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
           </div>
 
+          {/* Bidang filter */}
+          {fieldOptions.length > 0 && (
+            <div className="relative">
+              <select
+                value={filterField}
+                onChange={(e) => setFilterField(e.target.value)}
+                className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium max-w-[160px] truncate"
+              >
+                <option value="ALL">Semua Bidang ({fieldOptions.length})</option>
+                {fieldOptions.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
+            </div>
+          )}
+
           {/* Reset filter */}
-          {(filterCoverage !== 'ALL' || filterSource !== 'ALL' || filterYear !== 'ALL' || search) && (
+          {(filterCoverage !== 'ALL' || filterSource !== 'ALL' || filterYear !== 'ALL' || filterField !== 'ALL' || search) && (
             <Button
               variant="ghost"
               size="sm"
@@ -257,6 +305,7 @@ export default function PublicationsView({
                 setFilterCoverage('ALL')
                 setFilterSource('ALL')
                 setFilterYear('ALL')
+                setFilterField('ALL')
               }}
               className="h-9 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
@@ -265,28 +314,53 @@ export default function PublicationsView({
           )}
         </div>
 
-        <Button
-          size="sm"
-          onClick={openCreate}
-          className="h-9 text-xs font-medium gap-1.5 shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Tambah Publikasi
-        </Button>
+        {/* Action Buttons: Export, Import, Create */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            className="h-9 text-xs font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
+            title="Export data publikasi ke Microsoft Excel"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Export Excel</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportModalOpen(true)}
+            className="h-9 text-xs font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
+            title="Import data publikasi dari file Excel atau CSV"
+          >
+            <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Import Excel/CSV</span>
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={openCreate}
+            className="h-9 text-xs font-medium gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Tambah Publikasi</span>
+          </Button>
+        </div>
       </div>
 
-      {/* ── Main Table Card ── */}
+      {/* ── Main Table Card (Exact format & styling as InnovationsView) ── */}
       <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 font-mono">
               <tr>
                 <th className="p-3 w-12 text-center">No</th>
-                <th className="p-3 text-left">Judul / Title</th>
-                <th className="p-3 w-32 text-left">Cakupan</th>
-                <th className="p-3 w-28 text-left">Bidang</th>
-                <th className="p-3 w-36 text-left">Wilayah</th>
-                <th className="p-3 w-20 text-center">Dihitung</th>
+                <th className="p-3 text-left">Nama / Judul Publikasi</th>
+                <th className="p-3 w-40 text-left">Cakupan & Sumber</th>
+                <th className="p-3 w-48 text-left">Bidang Riset</th>
+                <th className="p-3 w-44 text-left">Provinsi & Wilayah</th>
+                <th className="p-3 w-24 text-center">Dihitung</th>
                 <th className="p-3 w-28 text-center">Aksi</th>
               </tr>
             </thead>
@@ -316,7 +390,7 @@ export default function PublicationsView({
                       </span>
                     </td>
 
-                    {/* Judul / Title */}
+                    {/* Judul / Title & Badges */}
                     <td className="p-3 align-middle">
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -330,33 +404,25 @@ export default function PublicationsView({
                               {item.year}
                             </span>
                           )}
-                          {item.source && (
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-mono text-[9px]">
-                              {item.source}
+                          {item.publication_media && (
+                            <span className="px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 font-mono text-[9px]">
+                              {item.publication_media}
                             </span>
                           )}
                         </div>
 
                         <div
                           onClick={() => setDetailItem(item)}
-                          className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                          className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors leading-snug"
                         >
                           {item.title}
                         </div>
 
-                        {(item.brin_author || item.publication_media) && (
-                          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {item.brin_author && (
-                              <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                                ✍️ {item.brin_author}
-                              </span>
-                            )}
-                            {item.brin_author && item.publication_media && <span>•</span>}
-                            {item.publication_media && (
-                              <span className="italic text-zinc-500">
-                                📰 {item.publication_media}
-                              </span>
-                            )}
+                        {item.brin_author && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-1">
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                              ✍️ {item.brin_author}
+                            </span>
                           </div>
                         )}
 
@@ -368,22 +434,31 @@ export default function PublicationsView({
                       </div>
                     </td>
 
-                    {/* Cakupan */}
+                    {/* Cakupan & Sumber */}
                     <td className="p-3 align-middle">
-                      {item.coverage ? (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 font-medium text-xs border border-zinc-200 dark:border-zinc-700">
-                          <Globe className="w-3 h-3 text-blue-500" />
-                          <span>{item.coverage}</span>
-                        </div>
-                      ) : (
-                        <span className="text-zinc-400 italic text-[11px]">-</span>
-                      )}
+                      <div className="space-y-1">
+                        {item.coverage ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 font-medium text-xs border border-zinc-200 dark:border-zinc-700">
+                            <Globe className="w-3 h-3 text-blue-500" />
+                            <span>{item.coverage}</span>
+                          </div>
+                        ) : (
+                          <span className="text-zinc-400 italic text-[11px]">-</span>
+                        )}
+                        {item.source && (
+                          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>{item.source}</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     {/* Bidang */}
                     <td className="p-3 align-middle">
                       {item.field ? (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 font-medium text-xs border border-amber-200 dark:border-amber-800/40">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                           <span>{item.field}</span>
                         </div>
                       ) : (
@@ -396,13 +471,13 @@ export default function PublicationsView({
                       {(item.province || item.region) ? (
                         <div className="space-y-0.5">
                           {item.province && (
-                            <div className="flex items-center gap-1 text-[11px] text-zinc-700 dark:text-zinc-300">
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
                               <MapPin className="w-3 h-3 text-rose-400 shrink-0" />
                               <span>{item.province}</span>
                             </div>
                           )}
                           {item.region && (
-                            <div className="text-[10px] text-zinc-400 dark:text-zinc-500 pl-4">
+                            <div className="text-[10px] text-zinc-400 dark:text-zinc-500 pl-4 font-mono">
                               {item.region}
                             </div>
                           )}
@@ -415,9 +490,14 @@ export default function PublicationsView({
                     {/* Dihitung */}
                     <td className="p-3 text-center align-middle">
                       {item.is_counted ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Ya
+                        </span>
                       ) : (
-                        <span className="text-zinc-300 dark:text-zinc-700 text-xs font-mono">—</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                          Tidak
+                        </span>
                       )}
                     </td>
 
@@ -427,7 +507,7 @@ export default function PublicationsView({
                         <button
                           onClick={() => setDetailItem(item)}
                           className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                          title="Lihat Detail"
+                          title="Lihat Detail Lengkap"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -452,6 +532,16 @@ export default function PublicationsView({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Card Footer */}
+        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+          <div>
+            Menampilkan <strong>{filtered.length}</strong> dari <strong>{publications.length}</strong> publikasi
+          </div>
+          <div className="text-[11px] text-zinc-400">
+            {publications.filter(p => p.is_counted).length} publikasi terhitung
+          </div>
         </div>
       </Card>
 
@@ -487,6 +577,9 @@ export default function PublicationsView({
                           {detailItem.coverage}
                         </span>
                       )}
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${detailItem.is_counted ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600'}`}>
+                        {detailItem.is_counted ? '✅ Dihitung' : '❌ Tidak Dihitung'}
+                      </span>
                     </div>
 
                     <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100 leading-snug pt-1">
@@ -498,30 +591,27 @@ export default function PublicationsView({
 
               {/* Body */}
               <div className="p-6 space-y-5 text-xs">
-
                 {/* 1. Penulis & Media */}
-                {(detailItem.brin_author || detailItem.publication_media) && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-semibold font-mono uppercase text-[11px]">
-                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                      <span>Penulis BRIN & Media Publikasi</span>
-                    </div>
-                    <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2">
-                      {detailItem.brin_author && (
-                        <div>
-                          <span className="text-zinc-400 font-mono">Penulis BRIN:</span>{' '}
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.brin_author}</span>
-                        </div>
-                      )}
-                      {detailItem.publication_media && (
-                        <div>
-                          <span className="text-zinc-400 font-mono">Media Publikasi:</span>{' '}
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.publication_media}</span>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-semibold font-mono uppercase text-[11px]">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Penulis BRIN & Media Publikasi</span>
                   </div>
-                )}
+                  <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                    {detailItem.brin_author && (
+                      <div>
+                        <span className="text-zinc-400 font-mono">Penulis BRIN:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.brin_author}</span>
+                      </div>
+                    )}
+                    {detailItem.publication_media && (
+                      <div>
+                        <span className="text-zinc-400 font-mono">Media Publikasi:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.publication_media}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* 2. Pusat Riset & Bidang */}
                 <div className="space-y-2">
@@ -538,16 +628,16 @@ export default function PublicationsView({
                     )}
                     {detailItem.field && (
                       <div>
-                        <span className="text-zinc-400 font-mono">Bidang:</span>{' '}
+                        <span className="text-zinc-400 font-mono">Bidang Riset:</span>{' '}
                         <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.field}</span>
                       </div>
                     )}
-                    <div>
-                      <span className="text-zinc-400 font-mono">Dihitung:</span>{' '}
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        {detailItem.is_counted ? '✅ Ya' : '❌ Tidak'}
-                      </span>
-                    </div>
+                    {detailItem.source && (
+                      <div>
+                        <span className="text-zinc-400 font-mono">Sumber Indeks:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.source}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -577,12 +667,12 @@ export default function PublicationsView({
 
                 {/* 4. Catatan Data */}
                 {detailItem.data_notes && (
-                  <div className="p-3.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 space-y-2">
+                  <div className="p-3.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 space-y-1.5">
                     <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold font-mono uppercase text-[11px]">
-                      <span>📋</span>
+                      <Info className="w-3.5 h-3.5" />
                       <span>Catatan Data</span>
                     </div>
-                    <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                    <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed font-mono text-[11px]">
                       {detailItem.data_notes}
                     </p>
                   </div>
@@ -618,222 +708,318 @@ export default function PublicationsView({
       </Dialog>
 
       {/* ─────────────────────────────────────────────────────
-          CREATE / EDIT DIALOG
+          CREATE / EDIT DIALOG (REVAMPED & WELL-STRUCTURED)
       ───────────────────────────────────────────────────── */}
       <Dialog open={formOpen} onOpenChange={(open) => { if (!saving) setFormOpen(open) }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-blue-500" />
-              {editingId ? 'Edit Publikasi' : 'Tambah Publikasi Baru'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 text-xs">
-            {/* IDs row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Publication ID
-                </label>
-                <Input
-                  placeholder="e.g. P10212"
-                  value={formData.publication_id}
-                  onChange={e => handleFormChange('publication_id', e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Tahun
-                </label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 2024"
-                  value={formData.year}
-                  onChange={e => handleFormChange('year', e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
+        <DialogContent className="max-w-2xl max-h-[88vh] overflow-hidden flex flex-col border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-0 shadow-2xl">
+          {/* Header Banner */}
+          <div className="p-5 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/80 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5" />
             </div>
-
-            {/* Title */}
-            <div className="space-y-1.5">
-              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                Judul / Title <span className="text-rose-400">*</span>
-              </label>
-              <Input
-                placeholder="Judul publikasi"
-                value={formData.title}
-                onChange={e => handleFormChange('title', e.target.value)}
-                className="h-8 text-xs"
-              />
+            <div className="space-y-1 flex-1">
+              <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                {editingId ? 'Edit Data Publikasi' : 'Tambah Publikasi Baru'}
+              </DialogTitle>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {editingId
+                  ? 'Perbarui rincian metadata publikasi ilmiah dan karya periset BRIN.'
+                  : 'Lengkapi formulir di bawah ini untuk menambahkan publikasi baru ke dalam database.'}
+              </p>
             </div>
+          </div>
 
-            {/* Media & Coverage */}
-            <div className="grid grid-cols-2 gap-3">
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 text-xs">
+
+            {/* SECTION 1: Metadata Publikasi */}
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 space-y-4">
+              <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono uppercase text-[11px]">
+                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                <span>Metadata Utama Publikasi</span>
+              </div>
+
+              {/* Title */}
               <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Media Publikasi
+                <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs flex items-center gap-1">
+                  Judul Publikasi <span className="text-rose-500">*</span>
                 </label>
-                <Input
-                  placeholder="e.g. Jurnal, Prosiding"
-                  value={formData.publication_media}
-                  onChange={e => handleFormChange('publication_media', e.target.value)}
-                  className="h-8 text-xs"
+                <textarea
+                  rows={2}
+                  placeholder="Masukkan judul publikasi secara lengkap..."
+                  value={formData.title}
+                  onChange={e => handleFormChange('title', e.target.value)}
+                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-400 leading-relaxed font-sans"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Cakupan
-                </label>
-                <Input
-                  placeholder="e.g. Internasional, Nasional"
-                  value={formData.coverage}
-                  onChange={e => handleFormChange('coverage', e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
 
-            {/* Source & Field */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Sumber
-                </label>
-                <Input
-                  placeholder="e.g. Scopus, Sinta"
-                  value={formData.source}
-                  onChange={e => handleFormChange('source', e.target.value)}
-                  className="h-8 text-xs"
-                />
+              {/* ID, Tahun, Sumber */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    ID Publikasi
+                  </label>
+                  <Input
+                    placeholder="e.g. P00001"
+                    value={formData.publication_id}
+                    onChange={e => handleFormChange('publication_id', e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Tahun Terbit
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 2024"
+                    value={formData.year}
+                    onChange={e => handleFormChange('year', e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Sumber Indeks
+                  </label>
+                  <Input
+                    placeholder="e.g. Scopus, Sinta"
+                    value={formData.source}
+                    onChange={e => handleFormChange('source', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Bidang
-                </label>
-                <Input
-                  placeholder="Bidang riset / area"
-                  value={formData.field}
-                  onChange={e => handleFormChange('field', e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
 
-            {/* BRIN Author */}
-            <div className="space-y-1.5">
-              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                Penulis BRIN
-              </label>
-              <Input
-                placeholder="Nama penulis afiliasi BRIN (pisah titik koma)"
-                value={formData.brin_author}
-                onChange={e => handleFormChange('brin_author', e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-
-            {/* Research Center */}
-            <div className="space-y-1.5">
-              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                Pusat Riset / Satker
-              </label>
-              <Input
-                placeholder="Nama pusat riset atau satuan kerja"
-                value={formData.research_center}
-                onChange={e => handleFormChange('research_center', e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-
-            {/* Province & Region */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Provinsi
-                </label>
-                <Input
-                  placeholder="Provinsi"
-                  value={formData.province}
-                  onChange={e => handleFormChange('province', e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                  Wilayah
-                </label>
-                <Input
-                  placeholder="Wilayah / Region"
-                  value={formData.region}
-                  onChange={e => handleFormChange('region', e.target.value)}
-                  className="h-8 text-xs"
-                />
+              {/* Media & Cakupan */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Media Publikasi
+                  </label>
+                  <Input
+                    placeholder="e.g. Jurnal, Prosiding, Buku"
+                    value={formData.publication_media}
+                    onChange={e => handleFormChange('publication_media', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Cakupan Publikasi
+                  </label>
+                  <Input
+                    placeholder="e.g. Global, Internasional, Nasional"
+                    value={formData.coverage}
+                    onChange={e => handleFormChange('coverage', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Data Notes */}
-            <div className="space-y-1.5">
-              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
-                Catatan Data
-              </label>
-              <textarea
-                placeholder="Catatan tambahan tentang data ini..."
-                value={formData.data_notes}
-                onChange={e => handleFormChange('data_notes', e.target.value)}
-                rows={3}
-                className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 placeholder:text-zinc-400"
-              />
+            {/* SECTION 2: Penulis & Afiliasi */}
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 space-y-3.5">
+              <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono uppercase text-[11px]">
+                <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Afiliasi & Penulis BRIN</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                  Penulis BRIN
+                </label>
+                <Input
+                  placeholder="Nama penulis afiliasi BRIN (gunakan titik koma bila jamak: Penulis A; Penulis B)"
+                  value={formData.brin_author}
+                  onChange={e => handleFormChange('brin_author', e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Pusat Riset / Satker
+                  </label>
+                  <Input
+                    placeholder="Pusat Riset atau Satuan Kerja BRIN"
+                    value={formData.research_center}
+                    onChange={e => handleFormChange('research_center', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Bidang Riset
+                  </label>
+                  <Input
+                    placeholder="e.g. Bumi, Laut & Kebencanaan; Antariksa"
+                    value={formData.field}
+                    onChange={e => handleFormChange('field', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Toggles */}
-            <div className="flex gap-5 pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-700 dark:text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={formData.is_counted}
-                  onChange={e => handleFormChange('is_counted', e.target.checked)}
-                  className="h-3.5 w-3.5 rounded"
-                />
-                Dihitung (Counted)
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-700 dark:text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={e => handleFormChange('is_active', e.target.checked)}
-                  className="h-3.5 w-3.5 rounded"
-                />
-                Aktif
-              </label>
+            {/* SECTION 3: Lokasi & Wilayah */}
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 space-y-3.5">
+              <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono uppercase text-[11px]">
+                <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                <span>Cakupan Wilayah / Lokasi</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Provinsi
+                  </label>
+                  <Input
+                    placeholder="e.g. Jawa Tengah, DKI Jakarta"
+                    value={formData.province}
+                    onChange={e => handleFormChange('province', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Wilayah / Region
+                  </label>
+                  <Input
+                    placeholder="e.g. Jawa, Sumatera, Nasional"
+                    value={formData.region}
+                    onChange={e => handleFormChange('region', e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFormOpen(false)}
-                disabled={saving}
-                className="h-8 text-xs"
-              >
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSubmit}
-                disabled={saving || !formData.title.trim()}
-                className="h-8 text-xs font-medium gap-1.5"
-              >
-                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {editingId ? 'Simpan Perubahan' : 'Tambah Publikasi'}
-              </Button>
+            {/* SECTION 4: Catatan & Status */}
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 space-y-3.5">
+              <div className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono uppercase text-[11px]">
+                <Info className="w-3.5 h-3.5 text-amber-500" />
+                <span>Catatan & Status Data</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                  Catatan Data
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Catatan tambahan mengenai pemetaan data atau verifikasi..."
+                  value={formData.data_notes}
+                  onChange={e => handleFormChange('data_notes', e.target.value)}
+                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-400 font-sans"
+                />
+              </div>
+
+              {/* Status Toggle Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label
+                  onClick={() => handleFormChange('is_counted', !formData.is_counted)}
+                  className={`p-3 rounded-lg border flex items-start gap-3 cursor-pointer select-none transition-all ${
+                    formData.is_counted
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20'
+                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.is_counted}
+                    onChange={e => handleFormChange('is_counted', e.target.checked)}
+                    className="h-4 w-4 rounded accent-emerald-600 mt-0.5"
+                  />
+                  <div>
+                    <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                      Dihitung (Counted)
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
+                      Data diikutsertakan dalam statistik publikasi riset BRIN.
+                    </div>
+                  </div>
+                </label>
+
+                <label
+                  onClick={() => handleFormChange('is_active', !formData.is_active)}
+                  className={`p-3 rounded-lg border flex items-start gap-3 cursor-pointer select-none transition-all ${
+                    formData.is_active
+                      ? 'border-blue-300 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-950/20'
+                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={e => handleFormChange('is_active', e.target.checked)}
+                    className="h-4 w-4 rounded accent-blue-600 mt-0.5"
+                  />
+                  <div>
+                    <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                      Status Publikasi Aktif
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
+                      Publikasi dapat dicari dan ditampilkan pada tabel sistem.
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
+
+          </div>
+
+          {/* Fixed Footer */}
+          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/60 flex items-center justify-end gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFormOpen(false)}
+              disabled={saving}
+              className="h-9 text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={saving || !formData.title.trim()}
+              className="h-9 text-xs font-medium gap-1.5"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : editingId ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Simpan Perubahan</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Tambah Publikasi</span>
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─────────────────────────────────────────────────────
+          IMPORT EXCEL / CSV MODAL
+      ───────────────────────────────────────────────────── */}
+      <PublicationImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={() => {
+          setImportModalOpen(false)
+          // Parent reload can be triggered if needed or will trigger on next query
+          window.location.reload()
+        }}
+      />
 
       {/* ─────────────────────────────────────────────────────
           DELETE CONFIRM DIALOG
