@@ -88,8 +88,6 @@ export default function PublicationsView({
   onReload,
 }) {
   const [search, setSearch] = useState('')
-  const [filterCoverage, setFilterCoverage] = useState('ALL')
-  const [filterSource, setFilterSource] = useState('ALL')
   const [filterYear, setFilterYear] = useState('ALL')
   const [filterField, setFilterField] = useState('ALL')
 
@@ -110,16 +108,6 @@ export default function PublicationsView({
   const [itemToDelete, setItemToDelete] = useState(null)
 
   /* ── Derived filter options ── */
-  const coverageOptions = useMemo(() => {
-    const vals = [...new Set(publications.map(p => p.coverage).filter(Boolean))]
-    return vals.sort()
-  }, [publications])
-
-  const sourceOptions = useMemo(() => {
-    const vals = [...new Set(publications.map(p => p.source).filter(Boolean))]
-    return vals.sort()
-  }, [publications])
-
   const yearOptions = useMemo(() => {
     const vals = [...new Set(publications.map(p => p.year).filter(Boolean))]
     return vals.sort((a, b) => b - a)
@@ -138,8 +126,6 @@ export default function PublicationsView({
   /* ── Filtered list ── */
   const filtered = useMemo(() => {
     return publications.filter(pub => {
-      if (filterCoverage !== 'ALL' && pub.coverage !== filterCoverage) return false
-      if (filterSource !== 'ALL' && pub.source !== filterSource) return false
       if (filterYear !== 'ALL' && String(pub.year) !== filterYear) return false
       if (filterField !== 'ALL') {
         const fields = toList(pub.field)
@@ -281,35 +267,7 @@ export default function PublicationsView({
             )}
           </div>
 
-          {/* Cakupan filter */}
-          <div className="relative">
-            <select
-              value={filterCoverage}
-              onChange={(e) => setFilterCoverage(e.target.value)}
-              className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
-            >
-              <option value="ALL">Semua Cakupan ({coverageOptions.length})</option>
-              {coverageOptions.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
-          </div>
 
-          {/* Sumber filter */}
-          <div className="relative">
-            <select
-              value={filterSource}
-              onChange={(e) => setFilterSource(e.target.value)}
-              className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
-            >
-              <option value="ALL">Semua Sumber ({sourceOptions.length})</option>
-              {sourceOptions.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
-          </div>
 
           {/* Tahun filter */}
           <div className="relative">
@@ -344,14 +302,12 @@ export default function PublicationsView({
           )}
 
           {/* Reset filter */}
-          {(filterCoverage !== 'ALL' || filterSource !== 'ALL' || filterYear !== 'ALL' || filterField !== 'ALL' || search) && (
+          {(filterYear !== 'ALL' || filterField !== 'ALL' || search) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearch('')
-                setFilterCoverage('ALL')
-                setFilterSource('ALL')
                 setFilterYear('ALL')
                 setFilterField('ALL')
               }}
