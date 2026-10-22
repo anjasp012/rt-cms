@@ -258,7 +258,43 @@ export const updateInnovation = updateSolution;
 export const deleteInnovation = deleteSolution;
 export const updateInnovationRelevance = updateSolutionRelevance;
 
-// 📁 5. FILE UPLOAD
+// 📰 5. PUBLICATIONS
+export async function fetchPublications({ year = null, source = null, coverage = null, limit = 200, offset = 0 } = {}) {
+  let url = `${API_BASE}/admin/publications?limit=${limit}&offset=${offset}`;
+  if (year) url += `&year=${year}`;
+  if (source) url += `&source=${encodeURIComponent(source)}`;
+  if (coverage) url += `&coverage=${encodeURIComponent(coverage)}`;
+  return request(url);
+}
+
+export async function createPublication(payload) {
+  return request(`${API_BASE}/admin/publications`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePublication(id, payload) {
+  return request(`${API_BASE}/admin/publications/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePublication(id) {
+  return request(`${API_BASE}/admin/publications/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function bulkDeletePublications(ids) {
+  return request(`${API_BASE}/admin/publications/bulk-delete`, {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
+}
+
+// 📁 6. FILE UPLOAD
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);

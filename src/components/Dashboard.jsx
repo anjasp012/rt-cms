@@ -6,6 +6,7 @@ import InnovationFormView from './InnovationFormView'
 import ModuleManagementView from './ModuleManagementView'
 import ModuleUsageView from './ModuleUsageView'
 import SuggestionsTable from './SuggestionsTable'
+import PublicationsView from './PublicationsView'
 import {
   fetchInnovations,
   createInnovation,
@@ -24,6 +25,10 @@ import {
   createZone,
   updateZone,
   deleteZone,
+  fetchPublications,
+  createPublication,
+  updatePublication,
+  deletePublication,
   checkApiHealth
 } from '@/lib/api'
 import { useTheme } from '@/lib/theme'
@@ -57,6 +62,7 @@ export default function Dashboard({ username, onLogout }) {
       'innovations/edit': 'innovation-form',
       'modules': 'modules',
       'suggestions': 'suggestions',
+      'publications': 'publications',
     }
     // Check for edit path pattern
     if (path.startsWith('innovations/edit')) return 'innovation-form'
@@ -70,6 +76,7 @@ export default function Dashboard({ username, onLogout }) {
       'innovation-form': '/innovations/new',
       'modules': '/modules',
       'suggestions': '/suggestions',
+      'publications': '/publications',
     }
     navigate(routeMap[view] || '/dashboard')
   }, [navigate])
@@ -81,6 +88,7 @@ export default function Dashboard({ username, onLogout }) {
   const [suggestions, setSuggestions] = useState([])
   const [personas, setPersonas] = useState([])
   const [zones, setZones] = useState([])
+  const [publications, setPublications] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [apiStatus, setApiStatus] = useState('checking')
@@ -94,6 +102,7 @@ export default function Dashboard({ username, onLogout }) {
     modules: 'Kelola Peran & Tantangan',
     usage: 'Dashboard',
     suggestions: 'Usulan Riset Pengunjung',
+    publications: 'Publications',
   }
 
   const verifyHealth = useCallback(async () => {
@@ -114,13 +123,15 @@ export default function Dashboard({ username, onLogout }) {
         usageRes,
         suggestionsRes,
         personasRes,
-        zonesRes
+        zonesRes,
+        pubRes,
       ] = await Promise.all([
         fetchInnovations().catch(() => []),
         fetchModuleUsage().catch(() => null),
         fetchSuggestions().catch(() => []),
         fetchPersonas().catch(() => []),
-        fetchZones().catch(() => [])
+        fetchZones().catch(() => []),
+        fetchPublications().catch(() => [])
       ])
 
       if (Array.isArray(innoRes)) setInnovations(innoRes)
@@ -128,6 +139,7 @@ export default function Dashboard({ username, onLogout }) {
       if (Array.isArray(suggestionsRes)) setSuggestions(suggestionsRes)
       if (Array.isArray(personasRes)) setPersonas(personasRes)
       if (Array.isArray(zonesRes)) setZones(zonesRes)
+      if (Array.isArray(pubRes)) setPublications(pubRes)
 
       if (isManualRefresh) {
         toast.success('Data berhasil diperbarui')
@@ -272,6 +284,33 @@ export default function Dashboard({ username, onLogout }) {
     }
   }
 
+  // --- PUBLICATION HANDLERS ---
+  const handleSavePublication = async (id, data) => {
+    try {
+      if (id) {
+        await updatePublication(id, data)
+        toast.success('Publication updated successfully')
+      } else {
+        await createPublication(data)
+        toast.success('Publication added successfully')
+      }
+      loadData(false)
+    } catch (err) {
+      toast.error(err.message || 'Failed to save publication')
+      throw err
+    }
+  }
+
+  const handleDeletePublication = async (id) => {
+    try {
+      await deletePublication(id)
+      toast.success('Publication deleted')
+      loadData(false)
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete publication')
+    }
+  }
+
 
   const navItems = [
     {
@@ -296,6 +335,12 @@ export default function Dashboard({ username, onLogout }) {
       label: 'Usulan Riset Pengunjung',
       icon: MessageSquare,
       count: suggestions.length,
+    },
+    {
+      id: 'publications',
+      label: 'Publications',
+      icon: BookOpen,
+      count: publications.length,
     },
   ]
 
@@ -520,6 +565,15 @@ export default function Dashboard({ username, onLogout }) {
                 onBulkDelete={handleBulkDeleteSuggestions}
               />
             </div>
+          )}
+
+          {currentView === 'publications' && (
+            <PublicationsView
+              publications={publications}
+              loading={loading}
+              onSave={handleSavePublication}
+              onDelete={handleDeletePublication}
+            />
           )}
 
         </div>
