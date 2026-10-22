@@ -473,12 +473,12 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
                 </div>
               </div>
               <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center gap-2">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 inline-block"></span>
                   <span>Aktif</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 inline-block"></span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-xs bg-zinc-300 dark:bg-zinc-700 inline-block"></span>
                   <span>Lainnya</span>
                 </span>
               </div>
