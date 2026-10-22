@@ -69,7 +69,7 @@ const BIDANG_FALLBACK = [
 ]
 
 export default function ResearchOverviewModal({ open, onClose, publications = [] }) {
-  const [selectedFieldName, setSelectedFieldName] = useState(null)
+  const [selectedFieldName, setSelectedFieldName] = useState('ALL')
   const [selectedYearId, setSelectedYearId] = useState('ALL')
   const canvasRef = useRef(null)
 
@@ -135,20 +135,20 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       .sort((a, b) => b.countAll - a.countAll)
   }, [sortedPublications])
 
-  // Bidang yang aktif dipilih (default ke bidang pertama yang terbanyak)
+  // Bidang yang aktif dipilih (default 'ALL' = tampilkan semua tanpa filter)
   const selectedField = useMemo(() => {
-    if (!selectedFieldName && uniqueFieldsList.length > 0) {
-      return uniqueFieldsList[0]
+    if (!selectedFieldName || selectedFieldName === 'ALL') {
+      return { name: 'ALL', countAll: sortedPublications.length, countSince2022: 0, Icon: Layers }
     }
-    const found = uniqueFieldsList.find(f => f.name.toLowerCase() === (selectedFieldName || '').toLowerCase())
-    return found || uniqueFieldsList[0] || { name: 'Semua Bidang', countAll: 0, countSince2022: 0, Icon: Layers }
-  }, [uniqueFieldsList, selectedFieldName])
+    const found = uniqueFieldsList.find(f => f.name.toLowerCase() === selectedFieldName.toLowerCase())
+    return found || { name: 'ALL', countAll: sortedPublications.length, countSince2022: 0, Icon: Layers }
+  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length])
 
   /* ─────────────────────────────────────────────────────────
      3. FILTER PUBLIKASI PADA BIDANG AKTIF
   ───────────────────────────────────────────────────────── */
   const fieldPubs = useMemo(() => {
-    if (!selectedField || !selectedField.name) return sortedPublications
+    if (!selectedField || selectedField.name === 'ALL') return sortedPublications
     const target = selectedField.name.toLowerCase()
     return sortedPublications.filter(pub => {
       const fields = toList(pub.field)
