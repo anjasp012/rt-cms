@@ -288,6 +288,7 @@ export async function fetchPublicPublicationsOverview({ year = 'ALL', field = 'A
   const params = new URLSearchParams();
   if (year && year !== 'ALL') params.append('year', String(year));
   if (field && field !== 'ALL') params.append('field', String(field));
+  params.append('include_hamparan', 'true');
 
   const query = params.toString() ? `?${params.toString()}` : '';
   const backendUrl = import.meta.env.VITE_BACKEND_URL || (API_BASE.replace(/\/api\/v1\/?$/, ''));
