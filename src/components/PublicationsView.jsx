@@ -27,11 +27,11 @@ import {
   Trash2,
   Eye,
   Loader2,
-  Check,
+  CheckCircle2,
+  Building2,
+  MapPin,
+  Globe,
   X,
-  Filter,
-  FileDown,
-  Hash,
 } from 'lucide-react'
 
 /* ─────────────────────────────────────────────────────────────
@@ -54,29 +54,6 @@ const emptyForm = () => ({
   is_active:         true,
 })
 
-/* ─────────────────────────────────────────────────────────────
-   Field label map (English column names for the form/table)
-───────────────────────────────────────────────────────────── */
-const FIELD_LABELS = {
-  publication_id:    'Publication ID',
-  title:             'Title',
-  publication_media: 'Media',
-  coverage:          'Coverage',
-  year:              'Year',
-  source:            'Source',
-  brin_author:       'BRIN Author(s)',
-  research_center:   'Research Center / Satker',
-  field:             'Field',
-  province:          'Province',
-  region:            'Region',
-  data_notes:        'Data Notes',
-  is_counted:        'Counted',
-  is_active:         'Active',
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Main Component
-───────────────────────────────────────────────────────────── */
 export default function PublicationsView({
   publications = [],
   loading = false,
@@ -97,7 +74,6 @@ export default function PublicationsView({
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
-  const [deleting, setDeleting] = useState(false)
 
   /* ── Derived filter options ── */
   const coverageOptions = useMemo(() => {
@@ -184,115 +160,96 @@ export default function PublicationsView({
     }
   }
 
-  const handleDeleteRequest = (pub) => {
+  const handleOpenDelete = (pub) => {
     setItemToDelete(pub)
     setDeleteConfirmOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
-    if (!itemToDelete) return
-    setDeleting(true)
-    try {
+  const handleExecuteDelete = async () => {
+    if (itemToDelete) {
       await onDelete(itemToDelete.id)
-      setDeleteConfirmOpen(false)
-      setItemToDelete(null)
-    } finally {
-      setDeleting(false)
     }
-  }
-
-  /* ── Coverage badge colour ── */
-  const coverageBadgeVariant = (coverage) => {
-    if (!coverage) return 'secondary'
-    const c = coverage.toLowerCase()
-    if (c.includes('internasional') || c.includes('international')) return 'default'
-    if (c.includes('nasional') || c.includes('national')) return 'outline'
-    return 'secondary'
+    setDeleteConfirmOpen(false)
+    setItemToDelete(null)
   }
 
   /* ─────────────────────────────────────────────────────────
      RENDER
   ───────────────────────────────────────────────────────── */
   return (
-    <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-blue-500" />
-            Publications
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filtered.length} of {publications.length} records
-          </p>
-        </div>
-        <Button onClick={openCreate} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          Add Publication
-        </Button>
-      </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* ── Top Filter and Actions Bar ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 flex-1">
 
-      {/* ── Filters ── */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative min-w-[240px] flex-1 max-w-md">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <Input
-              id="pub-search"
-              placeholder="Search title, author, field, region…"
+              type="text"
+              placeholder="Cari judul, ID publikasi, penulis, bidang, wilayah..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9"
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 text-xs"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Coverage filter */}
-          <div className="flex items-center gap-1">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+          <div className="relative">
             <select
-              id="pub-filter-coverage"
               value={filterCoverage}
-              onChange={e => setFilterCoverage(e.target.value)}
-              className="text-sm border rounded-md px-3 py-2 bg-background"
+              onChange={(e) => setFilterCoverage(e.target.value)}
+              className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
             >
-              <option value="ALL">All Coverage</option>
+              <option value="ALL">Semua Cakupan ({coverageOptions.length})</option>
               {coverageOptions.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
           </div>
 
           {/* Source filter */}
-          <select
-            id="pub-filter-source"
-            value={filterSource}
-            onChange={e => setFilterSource(e.target.value)}
-            className="text-sm border rounded-md px-3 py-2 bg-background"
-          >
-            <option value="ALL">All Sources</option>
-            {sourceOptions.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filterSource}
+              onChange={(e) => setFilterSource(e.target.value)}
+              className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
+            >
+              <option value="ALL">Semua Sumber ({sourceOptions.length})</option>
+              {sourceOptions.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
+          </div>
 
           {/* Year filter */}
-          <select
-            id="pub-filter-year"
-            value={filterYear}
-            onChange={e => setFilterYear(e.target.value)}
-            className="text-sm border rounded-md px-3 py-2 bg-background"
-          >
-            <option value="ALL">All Years</option>
-            {yearOptions.map(y => (
-              <option key={y} value={String(y)}>{y}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
+            >
+              <option value="ALL">Semua Tahun</option>
+              {yearOptions.map(y => (
+                <option key={y} value={String(y)}>{y}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">▾</span>
+          </div>
 
-          {/* Clear */}
-          {(search || filterCoverage !== 'ALL' || filterSource !== 'ALL' || filterYear !== 'ALL') && (
+          {/* Reset filter */}
+          {(filterCoverage !== 'ALL' || filterSource !== 'ALL' || filterYear !== 'ALL' || search) && (
             <Button
-              id="pub-clear-filters"
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -301,217 +258,358 @@ export default function PublicationsView({
                 setFilterSource('ALL')
                 setFilterYear('ALL')
               }}
-              className="gap-1"
+              className="h-9 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
-              <X className="h-3 w-3" /> Clear
+              Reset Filter
             </Button>
           )}
         </div>
-      </Card>
 
-      {/* ── Table ── */}
-      {loading ? (
-        <div className="flex justify-center items-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <BookOpen className="h-10 w-10 text-muted-foreground/40" />
-          <p className="text-muted-foreground">No publications found.</p>
-          <Button variant="outline" onClick={openCreate} className="gap-2">
-            <Plus className="h-4 w-4" /> Add Publication
-          </Button>
-        </Card>
-      ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Pub ID</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground min-w-[260px]">Title</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Media</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Coverage</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Year</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Source</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground min-w-[160px]">BRIN Author(s)</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground min-w-[160px]">Research Center</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Field</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Province</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground whitespace-nowrap">Region</th>
-                  <th className="text-center p-3 font-semibold text-muted-foreground whitespace-nowrap">Counted</th>
-                  <th className="text-center p-3 font-semibold text-muted-foreground whitespace-nowrap">Actions</th>
+        <Button
+          size="sm"
+          onClick={openCreate}
+          className="h-9 text-xs font-medium gap-1.5 shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Tambah Publikasi
+        </Button>
+      </div>
+
+      {/* ── Main Table Card ── */}
+      <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 font-mono">
+              <tr>
+                <th className="p-3 w-12 text-center">No</th>
+                <th className="p-3 text-left">Judul / Title</th>
+                <th className="p-3 w-32 text-left">Cakupan</th>
+                <th className="p-3 w-28 text-left">Bidang</th>
+                <th className="p-3 w-36 text-left">Wilayah</th>
+                <th className="p-3 w-20 text-center">Dihitung</th>
+                <th className="p-3 w-28 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
+                    <span>Memuat daftar publikasi BRIN...</span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map((pub, idx) => (
-                  <tr
-                    key={pub.id}
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="p-3 text-muted-foreground text-center">{idx + 1}</td>
-                    <td className="p-3 whitespace-nowrap">
-                      {pub.publication_id ? (
-                        <span className="font-mono text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded">
-                          {pub.publication_id}
-                        </span>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
+                    <BookOpen className="w-8 h-8 mx-auto mb-2 text-zinc-400 opacity-50" />
+                    <span>Tidak ada data publikasi yang cocok</span>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item, idx) => (
+                  <tr key={item.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors">
+
+                    {/* No */}
+                    <td className="p-3 text-center align-middle">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono font-bold text-xs">
+                        {idx + 1}
+                      </span>
+                    </td>
+
+                    {/* Judul / Title */}
+                    <td className="p-3 align-middle">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {item.publication_id && (
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 font-mono font-bold text-[10px]">
+                              {item.publication_id}
+                            </span>
+                          )}
+                          {item.year && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[10px]">
+                              {item.year}
+                            </span>
+                          )}
+                          {item.source && (
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-mono text-[9px]">
+                              {item.source}
+                            </span>
+                          )}
+                        </div>
+
+                        <div
+                          onClick={() => setDetailItem(item)}
+                          className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                        >
+                          {item.title}
+                        </div>
+
+                        {(item.brin_author || item.publication_media) && (
+                          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                            {item.brin_author && (
+                              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                ✍️ {item.brin_author}
+                              </span>
+                            )}
+                            {item.brin_author && item.publication_media && <span>•</span>}
+                            {item.publication_media && (
+                              <span className="italic text-zinc-500">
+                                📰 {item.publication_media}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {item.research_center && (
+                          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 line-clamp-1">
+                            🏢 {item.research_center}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Cakupan */}
+                    <td className="p-3 align-middle">
+                      {item.coverage ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 font-medium text-xs border border-zinc-200 dark:border-zinc-700">
+                          <Globe className="w-3 h-3 text-blue-500" />
+                          <span>{item.coverage}</span>
+                        </div>
                       ) : (
-                        <span className="text-muted-foreground/50">—</span>
+                        <span className="text-zinc-400 italic text-[11px]">-</span>
                       )}
                     </td>
-                    <td className="p-3">
-                      <span className="font-medium line-clamp-2 leading-snug">{pub.title}</span>
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-muted-foreground text-xs">{pub.publication_media || '—'}</td>
-                    <td className="p-3">
-                      {pub.coverage ? (
-                        <Badge variant={coverageBadgeVariant(pub.coverage)} className="text-xs whitespace-nowrap">
-                          {pub.coverage}
-                        </Badge>
-                      ) : <span className="text-muted-foreground/50">—</span>}
-                    </td>
-                    <td className="p-3 text-center font-mono text-xs">{pub.year || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{pub.source || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      <span className="line-clamp-2">{pub.brin_author || '—'}</span>
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      <span className="line-clamp-2">{pub.research_center || '—'}</span>
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{pub.field || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{pub.province || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{pub.region || '—'}</td>
-                    <td className="p-3 text-center">
-                      {pub.is_counted ? (
-                        <Check className="h-4 w-4 text-green-500 mx-auto" />
+
+                    {/* Bidang */}
+                    <td className="p-3 align-middle">
+                      {item.field ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 font-medium text-xs border border-amber-200 dark:border-amber-800/40">
+                          <span>{item.field}</span>
+                        </div>
                       ) : (
-                        <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />
+                        <span className="text-zinc-400 italic text-[11px]">-</span>
                       )}
                     </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1 justify-center">
-                        <Button
-                          id={`pub-view-${pub.id}`}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setDetailItem(pub)}
-                          title="View detail"
+
+                    {/* Wilayah */}
+                    <td className="p-3 align-middle">
+                      {(item.province || item.region) ? (
+                        <div className="space-y-0.5">
+                          {item.province && (
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-700 dark:text-zinc-300">
+                              <MapPin className="w-3 h-3 text-rose-400 shrink-0" />
+                              <span>{item.province}</span>
+                            </div>
+                          )}
+                          {item.region && (
+                            <div className="text-[10px] text-zinc-400 dark:text-zinc-500 pl-4">
+                              {item.region}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-zinc-400 italic text-[11px]">-</span>
+                      )}
+                    </td>
+
+                    {/* Dihitung */}
+                    <td className="p-3 text-center align-middle">
+                      {item.is_counted ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
+                      ) : (
+                        <span className="text-zinc-300 dark:text-zinc-700 text-xs font-mono">—</span>
+                      )}
+                    </td>
+
+                    {/* Aksi */}
+                    <td className="p-3 text-center align-middle">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setDetailItem(item)}
+                          className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                          title="Lihat Detail"
                         >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          id={`pub-edit-${pub.id}`}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => openEdit(pub)}
-                          title="Edit"
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => openEdit(item)}
+                          className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                          title="Edit Data"
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          id={`pub-delete-${pub.id}`}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:text-destructive"
-                          onClick={() => handleDeleteRequest(pub)}
-                          title="Delete"
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenDelete(item)}
+                          className="p-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-400 hover:text-rose-500 transition-colors"
+                          title="Hapus Data"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {/* ─────────────────────────────────────────────────────
-          DETAIL DIALOG
+          DETAIL MODAL
       ───────────────────────────────────────────────────── */}
-      <Dialog open={!!detailItem} onOpenChange={() => setDetailItem(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-blue-500" />
-              Publication Detail
-            </DialogTitle>
-          </DialogHeader>
+      <Dialog open={!!detailItem} onOpenChange={(open) => !open && setDetailItem(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-0 shadow-2xl">
           {detailItem && (
-            <div className="space-y-4">
-              {/* IDs */}
-              <div className="flex flex-wrap gap-2">
-                <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                  id: {detailItem.id}
-                </span>
-                {detailItem.publication_id && (
-                  <span className="font-mono text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">
-                    publication_id: {detailItem.publication_id}
-                  </span>
+            <div>
+              {/* Header */}
+              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/60">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {detailItem.publication_id && (
+                        <span className="font-mono text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
+                          {detailItem.publication_id}
+                        </span>
+                      )}
+                      {detailItem.year && (
+                        <span className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-xs">
+                          {detailItem.year}
+                        </span>
+                      )}
+                      {detailItem.source && (
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                          {detailItem.source}
+                        </span>
+                      )}
+                      {detailItem.coverage && (
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                          {detailItem.coverage}
+                        </span>
+                      )}
+                    </div>
+
+                    <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100 leading-snug pt-1">
+                      {detailItem.title}
+                    </DialogTitle>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5 text-xs">
+
+                {/* 1. Penulis & Media */}
+                {(detailItem.brin_author || detailItem.publication_media) && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-semibold font-mono uppercase text-[11px]">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Penulis BRIN & Media Publikasi</span>
+                    </div>
+                    <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                      {detailItem.brin_author && (
+                        <div>
+                          <span className="text-zinc-400 font-mono">Penulis BRIN:</span>{' '}
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.brin_author}</span>
+                        </div>
+                      )}
+                      {detailItem.publication_media && (
+                        <div>
+                          <span className="text-zinc-400 font-mono">Media Publikasi:</span>{' '}
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.publication_media}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Pusat Riset & Bidang */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-semibold font-mono uppercase text-[11px]">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Pusat Riset & Bidang</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
+                    {detailItem.research_center && (
+                      <div className="sm:col-span-2">
+                        <span className="text-zinc-400 font-mono">Pusat Riset / Satker:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.research_center}</span>
+                      </div>
+                    )}
+                    {detailItem.field && (
+                      <div>
+                        <span className="text-zinc-400 font-mono">Bidang:</span>{' '}
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.field}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-zinc-400 font-mono">Dihitung:</span>{' '}
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {detailItem.is_counted ? '✅ Ya' : '❌ Tidak'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Lokasi */}
+                {(detailItem.province || detailItem.region) && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-semibold font-mono uppercase text-[11px]">
+                      <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Provinsi & Wilayah</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
+                      {detailItem.province && (
+                        <div>
+                          <span className="text-zinc-400 font-mono">Provinsi:</span>{' '}
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.province}</span>
+                        </div>
+                      )}
+                      {detailItem.region && (
+                        <div>
+                          <span className="text-zinc-400 font-mono">Wilayah:</span>{' '}
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.region}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Catatan Data */}
+                {detailItem.data_notes && (
+                  <div className="p-3.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold font-mono uppercase text-[11px]">
+                      <span>📋</span>
+                      <span>Catatan Data</span>
+                    </div>
+                    <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                      {detailItem.data_notes}
+                    </p>
+                  </div>
                 )}
               </div>
 
-              {/* Title */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Title</p>
-                <p className="font-semibold leading-snug">{detailItem.title}</p>
-              </div>
-
-              {/* Grid of fields */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                {[
-                  ['Media', detailItem.publication_media],
-                  ['Coverage', detailItem.coverage],
-                  ['Year', detailItem.year],
-                  ['Source', detailItem.source],
-                  ['Field', detailItem.field],
-                  ['Province', detailItem.province],
-                  ['Region', detailItem.region],
-                  ['Counted', detailItem.is_counted ? 'Yes' : 'No'],
-                  ['Active', detailItem.is_active ? 'Yes' : 'No'],
-                ].map(([label, val]) => (
-                  <div key={label}>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="font-medium">{val != null && val !== '' ? String(val) : '—'}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* BRIN Author */}
-              {detailItem.brin_author && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">BRIN Author(s)</p>
-                  <p className="text-sm">{detailItem.brin_author}</p>
-                </div>
-              )}
-
-              {/* Research Center */}
-              {detailItem.research_center && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Research Center / Satker</p>
-                  <p className="text-sm">{detailItem.research_center}</p>
-                </div>
-              )}
-
-              {/* Data Notes */}
-              {detailItem.data_notes && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Data Notes</p>
-                  <p className="text-sm text-muted-foreground">{detailItem.data_notes}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button variant="outline" onClick={() => { setDetailItem(null); openEdit(detailItem) }}>
-                  <Edit className="h-4 w-4 mr-1" /> Edit
+              {/* Footer */}
+              <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-950/50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDetailItem(null)}
+                  className="h-8 text-xs"
+                >
+                  Tutup
                 </Button>
-                <Button variant="outline" onClick={() => setDetailItem(null)}>
-                  Close
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const item = detailItem
+                    setDetailItem(null)
+                    openEdit(item)
+                  }}
+                  className="h-8 text-xs font-medium gap-1.5"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Edit Publikasi Ini
                 </Button>
               </div>
             </div>
@@ -522,72 +620,78 @@ export default function PublicationsView({
       {/* ─────────────────────────────────────────────────────
           CREATE / EDIT DIALOG
       ───────────────────────────────────────────────────── */}
-      <Dialog open={formOpen} onOpenChange={open => { if (!saving) setFormOpen(open) }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={formOpen} onOpenChange={(open) => { if (!saving) setFormOpen(open) }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-blue-500" />
-              {editingId ? 'Edit Publication' : 'Add Publication'}
+            <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-blue-500" />
+              {editingId ? 'Edit Publikasi' : 'Tambah Publikasi Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 text-xs">
             {/* IDs row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                  <Hash className="h-3 w-3" /> Publication ID
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Publication ID
                 </label>
                 <Input
-                  id="form-publication-id"
                   placeholder="e.g. P10212"
                   value={formData.publication_id}
                   onChange={e => handleFormChange('publication_id', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Year</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Tahun
+                </label>
                 <Input
-                  id="form-year"
                   type="number"
                   placeholder="e.g. 2024"
                   value={formData.year}
                   onChange={e => handleFormChange('year', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
             {/* Title */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Title <span className="text-destructive">*</span>
+              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                Judul / Title <span className="text-rose-400">*</span>
               </label>
               <Input
-                id="form-title"
-                placeholder="Publication title"
+                placeholder="Judul publikasi"
                 value={formData.title}
                 onChange={e => handleFormChange('title', e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
 
             {/* Media & Coverage */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Media</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Media Publikasi
+                </label>
                 <Input
-                  id="form-publication-media"
                   placeholder="e.g. Jurnal, Prosiding"
                   value={formData.publication_media}
                   onChange={e => handleFormChange('publication_media', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Coverage</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Cakupan
+                </label>
                 <Input
-                  id="form-coverage"
                   placeholder="e.g. Internasional, Nasional"
                   value={formData.coverage}
                   onChange={e => handleFormChange('coverage', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
@@ -595,124 +699,136 @@ export default function PublicationsView({
             {/* Source & Field */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Sumber
+                </label>
                 <Input
-                  id="form-source"
                   placeholder="e.g. Scopus, Sinta"
                   value={formData.source}
                   onChange={e => handleFormChange('source', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Field</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Bidang
+                </label>
                 <Input
-                  id="form-field"
-                  placeholder="Research field / area"
+                  placeholder="Bidang riset / area"
                   value={formData.field}
                   onChange={e => handleFormChange('field', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
             {/* BRIN Author */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">BRIN Author(s)</label>
+              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                Penulis BRIN
+              </label>
               <Input
-                id="form-brin-author"
-                placeholder="Authors affiliated with BRIN (semicolon-separated)"
+                placeholder="Nama penulis afiliasi BRIN (pisah titik koma)"
                 value={formData.brin_author}
                 onChange={e => handleFormChange('brin_author', e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
 
             {/* Research Center */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Research Center / Satker</label>
+              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                Pusat Riset / Satker
+              </label>
               <Input
-                id="form-research-center"
-                placeholder="Research center or work unit"
+                placeholder="Nama pusat riset atau satuan kerja"
                 value={formData.research_center}
                 onChange={e => handleFormChange('research_center', e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
 
             {/* Province & Region */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Province</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Provinsi
+                </label>
                 <Input
-                  id="form-province"
-                  placeholder="Province"
+                  placeholder="Provinsi"
                   value={formData.province}
                   onChange={e => handleFormChange('province', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Region</label>
+                <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                  Wilayah
+                </label>
                 <Input
-                  id="form-region"
-                  placeholder="Region / Wilayah"
+                  placeholder="Wilayah / Region"
                   value={formData.region}
                   onChange={e => handleFormChange('region', e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
             {/* Data Notes */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data Notes</label>
+              <label className="text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] font-semibold tracking-wide">
+                Catatan Data
+              </label>
               <textarea
-                id="form-data-notes"
-                placeholder="Additional notes about this data entry…"
+                placeholder="Catatan tambahan tentang data ini..."
                 value={formData.data_notes}
                 onChange={e => handleFormChange('data_notes', e.target.value)}
                 rows={3}
-                className="w-full text-sm border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 placeholder:text-zinc-400"
               />
             </div>
 
             {/* Toggles */}
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+            <div className="flex gap-5 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-700 dark:text-zinc-300">
                 <input
-                  id="form-is-counted"
                   type="checkbox"
                   checked={formData.is_counted}
                   onChange={e => handleFormChange('is_counted', e.target.checked)}
-                  className="h-4 w-4 rounded"
+                  className="h-3.5 w-3.5 rounded"
                 />
-                Counted (Dihitung)
+                Dihitung (Counted)
               </label>
-              <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-700 dark:text-zinc-300">
                 <input
-                  id="form-is-active"
                   type="checkbox"
                   checked={formData.is_active}
                   onChange={e => handleFormChange('is_active', e.target.checked)}
-                  className="h-4 w-4 rounded"
+                  className="h-3.5 w-3.5 rounded"
                 />
-                Active
+                Aktif
               </label>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t">
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
               <Button
-                id="form-cancel"
                 variant="outline"
+                size="sm"
                 onClick={() => setFormOpen(false)}
                 disabled={saving}
+                className="h-8 text-xs"
               >
-                Cancel
+                Batal
               </Button>
               <Button
-                id="form-save"
+                size="sm"
                 onClick={handleSubmit}
                 disabled={saving || !formData.title.trim()}
-                className="gap-2"
+                className="h-8 text-xs font-medium gap-1.5"
               >
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {editingId ? 'Save Changes' : 'Add Publication'}
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {editingId ? 'Simpan Perubahan' : 'Tambah Publikasi'}
               </Button>
             </div>
           </div>
@@ -725,22 +841,15 @@ export default function PublicationsView({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Publication?</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Data Publikasi</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{' '}
-              <strong>"{itemToDelete?.title}"</strong>? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus publikasi "{itemToDelete?.title}" ({itemToDelete?.publication_id || 'Tanpa ID'})? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              id="confirm-delete-pub"
-              onClick={handleDeleteConfirm}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
-            >
-              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Delete
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleExecuteDelete}>
+              Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
