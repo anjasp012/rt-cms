@@ -26,6 +26,7 @@ import {
   updateZone,
   deleteZone,
   fetchPublications,
+  fetchAllPublications,
   createPublication,
   updatePublication,
   deletePublication,
@@ -89,6 +90,7 @@ export default function Dashboard({ username, onLogout }) {
   const [personas, setPersonas] = useState([])
   const [zones, setZones] = useState([])
   const [publications, setPublications] = useState([])
+  const [allPublications, setAllPublications] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [apiStatus, setApiStatus] = useState('checking')
@@ -131,7 +133,7 @@ export default function Dashboard({ username, onLogout }) {
         fetchSuggestions().catch(() => []),
         fetchPersonas().catch(() => []),
         fetchZones().catch(() => []),
-        fetchPublications().catch(() => [])
+        fetchPublications({ limit: 100, offset: 0 }).catch(() => [])
       ])
 
       if (Array.isArray(innoRes)) setInnovations(innoRes)
@@ -140,6 +142,11 @@ export default function Dashboard({ username, onLogout }) {
       if (Array.isArray(personasRes)) setPersonas(personasRes)
       if (Array.isArray(zonesRes)) setZones(zonesRes)
       if (Array.isArray(pubRes)) setPublications(pubRes)
+
+      // Fetch all publications in background for sekilas modal
+      fetchAllPublications().then(res => {
+        if (Array.isArray(res)) setAllPublications(res)
+      }).catch(() => {})
 
       if (isManualRefresh) {
         toast.success('Data berhasil diperbarui')
@@ -570,6 +577,7 @@ export default function Dashboard({ username, onLogout }) {
           {currentView === 'publications' && (
             <PublicationsView
               publications={publications}
+              allPublications={allPublications}
               loading={loading}
               onSave={handleSavePublication}
               onDelete={handleDeletePublication}

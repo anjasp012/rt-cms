@@ -82,6 +82,7 @@ const emptyForm = () => ({
 
 export default function PublicationsView({
   publications = [],
+  allPublications = [],
   loading = false,
   onSave,
   onDelete,
@@ -92,6 +93,10 @@ export default function PublicationsView({
   const [filterSource, setFilterSource] = useState('ALL')
   const [filterYear, setFilterYear] = useState('ALL')
   const [filterField, setFilterField] = useState('ALL')
+
+  // Pagination
+  const PAGE_SIZE = 100
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Modals
   const [detailItem, setDetailItem] = useState(null)
@@ -159,6 +164,18 @@ export default function PublicationsView({
       )
     })
   }, [publications, search, filterCoverage, filterSource, filterYear, filterField])
+
+  // Reset to page 1 when filters/search change
+  const filteredWithReset = useMemo(() => {
+    setCurrentPage(1)
+    return filtered
+  }, [filtered]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginatedFiltered = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filtered.slice(start, start + PAGE_SIZE)
+  }, [filtered, currentPage, PAGE_SIZE])
 
   /* ── Form helpers ── */
   const openCreate = () => {
@@ -423,13 +440,15 @@ export default function PublicationsView({
                   </td>
                 </tr>
               ) : (
-                filtered.map((item, idx) => (
+                paginatedFiltered.map((item, idx) => {
+                  const absoluteIdx = (currentPage - 1) * PAGE_SIZE + idx
+                  return (
                   <tr key={item.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors">
 
                     {/* No */}
                     <td className="p-3 text-center align-middle">
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono font-bold text-xs">
-                        {idx + 1}
+                        {absoluteIdx + 1}
                       </span>
                     </td>
 
@@ -574,19 +593,47 @@ export default function PublicationsView({
                       </div>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Card Footer */}
-        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+        {/* Card Footer with Pagination */}
+        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono">
           <div>
-            Menampilkan <strong>{filtered.length}</strong> dari <strong>{publications.length}</strong> publikasi
+            Menampilkan <strong>{Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}</strong> dari <strong>{filtered.length.toLocaleString('id-ID')}</strong> hasil filter (<strong>{publications.length.toLocaleString('id-ID')}</strong> total)
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >«</button>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >‹</button>
+              <span className="px-3 py-1 rounded bg-zinc-100 dark:bg-zinc-800">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >›</button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >»</button>
+            </div>
+          )}
           <div className="text-[11px] text-zinc-400">
-            {publications.filter(p => p.is_counted).length} publikasi terhitung
+            {publications.filter(p => p.is_counted).length.toLocaleString('id-ID')} dihitung
           </div>
         </div>
       </Card>
@@ -1139,7 +1186,7 @@ export default function PublicationsView({
       <ResearchOverviewModal
         open={overviewOpen}
         onClose={() => setOverviewOpen(false)}
-        publications={publications}
+        publications={allPublications.length > 0 ? allPublications : publications}
       />
 
       {/* ─────────────────────────────────────────────────────

@@ -259,12 +259,17 @@ export const deleteInnovation = deleteSolution;
 export const updateInnovationRelevance = updateSolutionRelevance;
 
 // 📰 5. PUBLICATIONS
-export async function fetchPublications({ year = null, source = null, coverage = null, limit = 200, offset = 0 } = {}) {
+export async function fetchPublications({ year = null, source = null, coverage = null, limit = 100, offset = 0 } = {}) {
   let url = `${API_BASE}/admin/publications?limit=${limit}&offset=${offset}`;
   if (year) url += `&year=${year}`;
   if (source) url += `&source=${encodeURIComponent(source)}`;
   if (coverage) url += `&coverage=${encodeURIComponent(coverage)}`;
   return request(url);
+}
+
+// Fetch ALL publications for sekilas modal (no pagination limit)
+export async function fetchAllPublications() {
+  return request(`${API_BASE}/admin/publications?limit=100000&offset=0`);
 }
 
 export async function createPublication(payload) {
