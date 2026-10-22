@@ -148,7 +148,7 @@ export default function PublicationsView({
         pub.publication_media?.toLowerCase().includes(q)
       )
     })
-  }, [publications, search, filterCoverage, filterSource, filterYear, filterField])
+  }, [publications, search, filterYear, filterField])
 
   // Reset to page 1 when filters/search change
   useEffect(() => {
