@@ -708,27 +708,6 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
             {/* Semua Bidang Unique dari Kolom 'field' (Consistent gap-2) */}
             <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {/* Tombol 'Semua Bidang' */}
-                <button
-                  key="ALL"
-                  onClick={() => setSelectedFieldName('ALL')}
-                  className={`p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between min-h-[64px] ${
-                    selectedFieldName === 'ALL'
-                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <Layers className={`w-3.5 h-3.5 ${selectedFieldName === 'ALL' ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
-                    <span className="text-[9px] font-mono text-zinc-400 font-semibold">
-                      {sortedPublications.length.toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                  <div className="font-semibold text-[11px] leading-tight line-clamp-2 mt-1">
-                    Semua Bidang
-                  </div>
-                </button>
-
                 {uniqueFieldsList.map((bidang) => {
                   const isSelected = selectedFieldName !== 'ALL' && selectedField.name.toLowerCase() === bidang.name.toLowerCase()
                   const IconComp = bidang.Icon
