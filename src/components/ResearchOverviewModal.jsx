@@ -77,6 +77,15 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   const [hoveredPub, setHoveredPub] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
+  // Reset filter ke ALL setiap kali modal dibuka
+  useEffect(() => {
+    if (open) {
+      setSelectedFieldName('ALL')
+      setSelectedYearId('ALL')
+      setHoveredPub(null)
+    }
+  }, [open])
+
   /* ─────────────────────────────────────────────────────────
      1. SORTING PUBLIKASI BERDASARKAN ID_PUBLIKASI
   ───────────────────────────────────────────────────────── */
@@ -135,26 +144,47 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       .sort((a, b) => b.countAll - a.countAll)
   }, [sortedPublications])
 
+  // Hitung jumlah seluruh publikasi sejak 2022
+  const totalCountSince2022 = useMemo(() => {
+    let count = 0
+    sortedPublications.forEach(pub => {
+      if (pub.year && pub.year >= 2022) count++
+    })
+    return count
+  }, [sortedPublications])
+
   // Bidang yang aktif dipilih (default 'ALL' = tampilkan semua tanpa filter)
   const selectedField = useMemo(() => {
     if (!selectedFieldName || selectedFieldName === 'ALL') {
-      return { name: 'ALL', countAll: sortedPublications.length, countSince2022: 0, Icon: Layers }
+      return {
+        name: 'Semua Bidang Riset',
+        id: 'ALL',
+        countAll: sortedPublications.length,
+        countSince2022: totalCountSince2022,
+        Icon: Layers
+      }
     }
     const found = uniqueFieldsList.find(f => f.name.toLowerCase() === selectedFieldName.toLowerCase())
-    return found || { name: 'ALL', countAll: sortedPublications.length, countSince2022: 0, Icon: Layers }
-  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length])
+    return found || {
+      name: 'Semua Bidang Riset',
+      id: 'ALL',
+      countAll: sortedPublications.length,
+      countSince2022: totalCountSince2022,
+      Icon: Layers
+    }
+  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length, totalCountSince2022])
 
   /* ─────────────────────────────────────────────────────────
      3. FILTER PUBLIKASI PADA BIDANG AKTIF
   ───────────────────────────────────────────────────────── */
   const fieldPubs = useMemo(() => {
-    if (!selectedField || selectedField.name === 'ALL') return sortedPublications
+    if (!selectedField || selectedField.id === 'ALL' || selectedFieldName === 'ALL') return sortedPublications
     const target = selectedField.name.toLowerCase()
     return sortedPublications.filter(pub => {
       const fields = toList(pub.field)
       return fields.some(f => f.trim().toLowerCase() === target)
     })
-  }, [sortedPublications, selectedField])
+  }, [sortedPublications, selectedField, selectedFieldName])
 
   /* ─────────────────────────────────────────────────────────
      4. HITUNG PUSAT RISET TERBANYAK (TOP 3 TERATAS UNIQUE)
@@ -326,6 +356,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     }
 
     const { cols, cellWidth, cellHeight, dotSize, offsetX, offsetY } = gridInfo
+    const isAllField = !selectedField || selectedField.id === 'ALL' || selectedFieldName === 'ALL'
     const activeFieldName = selectedField.name ? selectedField.name.toLowerCase() : ''
 
     for (let i = 0; i < N; i++) {
@@ -336,13 +367,13 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       const y = row * cellHeight + offsetY
 
       const pubFields = toList(pub.field).map(f => f.trim().toLowerCase())
-      const isFieldMatch = pubFields.includes(activeFieldName)
+      const isFieldMatch = isAllField || pubFields.includes(activeFieldName)
       const isYearMatch = selectedYearId === 'ALL' || (pub.year && String(pub.year) === selectedYearId)
 
       if (isFieldMatch && isYearMatch) {
         ctx.fillStyle = '#2563eb' // Biru pekat aktif
       } else if (isFieldMatch && !isYearMatch) {
-        ctx.fillStyle = '#93c5fd' // Biru muda
+        ctx.fillStyle = isAllField ? '#cbd5e1' : '#93c5fd' // Dimmed jika All, atau biru muda jika bidang tertentu
       } else if (!isFieldMatch && isYearMatch) {
         ctx.fillStyle = '#cbd5e1' // Abu-abu kebiruan
       } else {
@@ -358,7 +389,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
         ctx.fillRect(x, y, dotSize, dotSize)
       }
     }
-  }, [open, sortedPublications, gridInfo, selectedField, selectedYearId])
+  }, [open, sortedPublications, gridInfo, selectedField, selectedFieldName, selectedYearId])
 
   /* ─────────────────────────────────────────────────────────
      9. HOVER MOUSE HANDLER
@@ -636,7 +667,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
               {/* Pusat Riset Teraktif (Top 3 Unique dari Database) */}
               <div className="space-y-1.5 pt-1 border-t border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className="font-bold text-zinc-700 dark:text-zinc-300">Pusat riset teraktif di bidang ini:</span>
+                  <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                    {selectedFieldName === 'ALL' ? 'Pusat riset teraktif (seluruh bidang):' : 'Pusat riset teraktif di bidang ini:'}
+                  </span>
                   <span className="text-zinc-400">Top 3 Terbanyak</span>
                 </div>
 
@@ -663,13 +696,34 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
             {/* Semua Bidang Unique dari Kolom 'field' (Consistent gap-2) */}
             <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {/* Tombol 'Semua Bidang' */}
+                <button
+                  key="ALL"
+                  onClick={() => setSelectedFieldName('ALL')}
+                  className={`p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between min-h-[64px] ${
+                    selectedFieldName === 'ALL'
+                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/20'
+                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <Layers className={`w-3.5 h-3.5 ${selectedFieldName === 'ALL' ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
+                    <span className="text-[9px] font-mono text-zinc-400 font-semibold">
+                      {sortedPublications.length.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  <div className="font-semibold text-[11px] leading-tight line-clamp-2 mt-1">
+                    Semua Bidang
+                  </div>
+                </button>
+
                 {uniqueFieldsList.map((bidang) => {
-                  const isSelected = selectedField.name.toLowerCase() === bidang.name.toLowerCase()
+                  const isSelected = selectedFieldName !== 'ALL' && selectedField.name.toLowerCase() === bidang.name.toLowerCase()
                   const IconComp = bidang.Icon
                   return (
                     <button
                       key={bidang.name}
-                      onClick={() => setSelectedFieldName(bidang.name)}
+                      onClick={() => setSelectedFieldName(isSelected ? 'ALL' : bidang.name)}
                       className={`p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between min-h-[64px] ${
                         isSelected
                           ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/20'
