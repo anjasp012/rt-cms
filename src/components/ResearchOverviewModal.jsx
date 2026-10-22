@@ -16,11 +16,7 @@ import {
   Rocket,
   Atom,
   Scroll,
-  X,
-  Sparkles,
-  Building2,
-  Calendar,
-  Users
+  X
 } from 'lucide-react'
 
 // Helper: Safely convert JSON, array, or semicolon string into string list
@@ -68,11 +64,29 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   const [selectedYearId, setSelectedYearId] = useState('ALL')
   const canvasRef = useRef(null)
 
+  // Hover state untuk menampilkan detail titik publikasi
+  const [hoveredPub, setHoveredPub] = useState(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+
   /* ─────────────────────────────────────────────────────────
-     AGGREGASI DATA DINAMIS LANGSUNG DARI TABEL PUBLIKASI
+     1. SORTING PUBLIKASI BERDASARKAN ID_PUBLIKASI
+  ───────────────────────────────────────────────────────── */
+  const sortedPublications = useMemo(() => {
+    return [...publications].sort((a, b) => {
+      const idA = a.publication_id || ''
+      const idB = b.publication_id || ''
+      if (!idA && !idB) return (a.title || '').localeCompare(b.title || '')
+      if (!idA) return 1
+      if (!idB) return -1
+      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  }, [publications])
+
+  /* ─────────────────────────────────────────────────────────
+     2. AGGREGASI DATA DINAMIS DARI TABEL PUBLIKASI
   ───────────────────────────────────────────────────────── */
   const stats = useMemo(() => {
-    const totalPubs = publications.length
+    const totalPubs = sortedPublications.length
     const authorSet = new Set()
     const centerSet = new Set()
     const yearCounts = {}
@@ -86,7 +100,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       centerMap: {},
     }))
 
-    publications.forEach(pub => {
+    sortedPublications.forEach(pub => {
       // Penulis BRIN
       toList(pub.brin_author).forEach(a => authorSet.add(a))
       // Pusat Riset / Satker
@@ -121,14 +135,13 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       .filter(n => !isNaN(n) && n > 1990 && n < 2035)
       .sort((a, b) => a - b)
 
-    // Rentang tahun untuk grafik bar (default 2018–2025 jika belum ada data tahun)
+    // Rentang tahun untuk grafik bar
     const chartYears = sortedYearsAsc.length > 0
       ? sortedYearsAsc.slice(-8)
       : [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
     // Proses top pusat riset dan array tahunan untuk tiap bidang
     bidangStatsMap.forEach(b => {
-      // Top 3 pusat riset
       b.topCenters = Object.entries(b.centerMap)
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
@@ -140,23 +153,20 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       }))
     })
 
-    // Year tiles untuk pemilih tahun di kiri bawah
+    // Year tiles untuk pemilih tahun
     const sortedYearsDesc = [...sortedYearsAsc].reverse()
     const yearTiles = [
       {
         id: 'ALL',
         label: 'Semua tahun',
         count: `${totalPubs.toLocaleString('id-ID')} publikasi`,
-        ratio: totalPubs > 0 ? 0.45 : 0.2
       },
       ...sortedYearsDesc.slice(0, 7).map(yr => {
         const count = yearCounts[String(yr)] || 0
-        const ratio = totalPubs > 0 ? Math.min(0.85, Math.max(0.12, (count / totalPubs) * 3)) : 0.15
         return {
           id: String(yr),
           label: String(yr),
           count: `${count.toLocaleString('id-ID')} publikasi`,
-          ratio
         }
       })
     ]
@@ -168,7 +178,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       bidangStats: bidangStatsMap,
       yearTiles
     }
-  }, [publications])
+  }, [sortedPublications])
 
   // Bidang aktif yang dipilih
   const selectedBidang = useMemo(() => {
@@ -181,7 +191,37 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     return Math.max(...counts, 10)
   }, [selectedBidang])
 
-  // Canvas Dot Matrix (Satu titik = satu pengetahuan)
+  /* ─────────────────────────────────────────────────────────
+     3. HITUNG STRUKTUR GRID TITIK (1 TITIK = 1 PUBLIKASI)
+  ───────────────────────────────────────────────────────── */
+  const gridInfo = useMemo(() => {
+    const N = sortedPublications.length
+    const width = 480
+    const height = 260
+    if (N === 0) {
+      return { cols: 1, rows: 1, cellWidth: width, cellHeight: height, dotSize: 4, offsetX: 0, offsetY: 0, N: 0 }
+    }
+
+    const aspect = width / height // ~1.846
+    let cols = Math.max(1, Math.ceil(Math.sqrt(N * aspect)))
+    let rows = Math.ceil(N / cols)
+    while (cols * rows < N) {
+      cols++
+    }
+
+    const cellWidth = width / cols
+    const cellHeight = height / rows
+    const maxDim = Math.min(cellWidth, cellHeight)
+    const dotSize = Math.max(1.2, Math.min(10, maxDim * 0.78))
+    const offsetX = (cellWidth - dotSize) / 2
+    const offsetY = (cellHeight - dotSize) / 2
+
+    return { cols, rows, cellWidth, cellHeight, dotSize, offsetX, offsetY, N }
+  }, [sortedPublications.length])
+
+  /* ─────────────────────────────────────────────────────────
+     4. RENDER TITIK-TITIK PUBLIKASI KE CANVAS
+  ───────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!open) return
     const canvas = canvasRef.current
@@ -197,33 +237,80 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     ctx.scale(dpr, dpr)
     ctx.clearRect(0, 0, width, height)
 
-    const cols = 48
-    const rows = 26
-    const dotSize = 3.5
-    const gapX = (width - cols * dotSize) / (cols - 1)
-    const gapY = (height - rows * dotSize) / (rows - 1)
+    const N = sortedPublications.length
+    if (N === 0) {
+      ctx.fillStyle = '#a1a1aa'
+      ctx.font = '12px Segoe UI, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('Belum ada data publikasi di tabel.', width / 2, height / 2)
+      return
+    }
 
-    const yearObj = stats.yearTiles.find(y => y.id === selectedYearId) || stats.yearTiles[0]
-    const baseRatio = yearObj.ratio
-    const bidangIndex = BIDANG_DEFINITIONS.findIndex(b => b.id === selectedBidangId)
-    const seed = (bidangIndex + 1) * 73 + (selectedYearId.charCodeAt(0) || 5)
+    const { cols, cellWidth, cellHeight, dotSize, offsetX, offsetY } = gridInfo
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const x = c * (dotSize + gapX)
-        const y = r * (dotSize + gapY)
-        const hash = Math.sin(c * 12.9898 + r * 78.233 + seed) * 43758.5453
-        const val = hash - Math.floor(hash)
+    for (let i = 0; i < N; i++) {
+      const pub = sortedPublications[i]
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const x = col * cellWidth + offsetX
+      const y = row * cellHeight + offsetY
 
-        if (val < baseRatio) {
-          ctx.fillStyle = '#2563eb' // Biru aktif
-        } else {
-          ctx.fillStyle = '#e4e4e7' // Abu-abu lembut
-        }
+      const isBidang = matchesBidang(pub, selectedBidang)
+      const isYear = selectedYearId === 'ALL' || (pub.year && String(pub.year) === selectedYearId)
+
+      if (isBidang && isYear) {
+        // Titik publikasi yang cocok dengan bidang & tahun aktif: Biru cerah
+        ctx.fillStyle = '#2563eb'
+      } else if (isBidang && !isYear) {
+        // Cocok bidang tapi beda tahun: Biru muda
+        ctx.fillStyle = '#93c5fd'
+      } else if (!isBidang && isYear) {
+        // Cocok tahun tapi beda bidang: Abu-abu kebiruan
+        ctx.fillStyle = '#cbd5e1'
+      } else {
+        // Inactive: Abu-abu netral
+        ctx.fillStyle = '#e4e4e7'
+      }
+
+      if (dotSize >= 5) {
+        ctx.beginPath()
+        ctx.arc(x + dotSize / 2, y + dotSize / 2, dotSize / 2, 0, Math.PI * 2)
+        ctx.fill()
+      } else {
         ctx.fillRect(x, y, dotSize, dotSize)
       }
     }
-  }, [open, selectedBidangId, selectedYearId, stats.yearTiles])
+  }, [open, sortedPublications, gridInfo, selectedBidang, selectedYearId])
+
+  /* ─────────────────────────────────────────────────────────
+     5. HOVER HANDLER: LIHAT DETAIL SETIAP TITIK PUBLIKASI
+  ───────────────────────────────────────────────────────── */
+  const handleCanvasMouseMove = (e) => {
+    const canvas = canvasRef.current
+    if (!canvas || sortedPublications.length === 0) return
+    const rect = canvas.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const scaleX = 480 / rect.width
+    const scaleY = 260 / rect.height
+    const canvasX = mouseX * scaleX
+    const canvasY = mouseY * scaleY
+
+    const col = Math.floor(canvasX / gridInfo.cellWidth)
+    const row = Math.floor(canvasY / gridInfo.cellHeight)
+    const idx = row * gridInfo.cols + col
+
+    if (idx >= 0 && idx < sortedPublications.length) {
+      setHoveredPub(sortedPublications[idx])
+      setTooltipPos({ x: mouseX, y: mouseY })
+    } else {
+      setHoveredPub(null)
+    }
+  }
+
+  const handleCanvasMouseLeave = () => {
+    setHoveredPub(null)
+  }
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -239,14 +326,16 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
               </span>
               <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
               <span className="text-[11px] text-zinc-400 font-mono">
-                Data Real-time Tabel Publikasi
+                Urut berdasarkan ID Publikasi
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Setiap titik, sebuah pengetahuan.
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Pilih bidang atau tahun untuk melihat jejak publikasi riil dari database.
+              {sortedPublications.length > 0
+                ? `${sortedPublications.length.toLocaleString('id-ID')} titik publikasi diurutkan dari ID publikasi terkecil. Arahkan kursor ke titik untuk melihat detailnya.`
+                : 'Belum ada data publikasi di tabel.'}
             </p>
           </div>
 
@@ -271,7 +360,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
               Publikasi ilmiah
             </div>
             <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
-              Total tercatat dalam tabel
+              Total titik dalam kanvas matriks
             </div>
           </div>
 
@@ -300,29 +389,73 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
           </div>
         </div>
 
-        {/* ── Main Two-Panel Grid (Gaps dirapikan) ── */}
+        {/* ── Main Two-Panel Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start pt-1">
 
           {/* ── LEFT PANEL: Hamparan Seluruh Publikasi ── */}
           <div className="lg:col-span-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 sm:p-5 bg-white dark:bg-zinc-900/30 flex flex-col justify-between space-y-4">
             {/* Header & Legend */}
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase font-mono">
-                Hamparan Sebaran Publikasi
-              </h3>
-              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
-                <span>Satu titik = satu publikasi</span>
+              <div>
+                <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase font-mono">
+                  Hamparan Sebaran Publikasi
+                </h3>
+                <div className="text-[10px] text-zinc-400 font-mono">
+                  {sortedPublications.length.toLocaleString('id-ID')} Titik (Sort by ID Publikasi)
+                </div>
+              </div>
+              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center gap-2">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
+                  <span>Aktif</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 inline-block"></span>
+                  <span>Lainnya</span>
+                </span>
               </div>
             </div>
 
-            {/* Dot Matrix Canvas */}
-            <div className="w-full flex items-center justify-center bg-zinc-50/60 dark:bg-zinc-950/60 rounded-xl p-2.5 border border-zinc-100 dark:border-zinc-800/60 overflow-hidden">
+            {/* Dot Matrix Canvas with Real-time Hover Tooltip */}
+            <div
+              className="relative w-full flex items-center justify-center bg-zinc-50/60 dark:bg-zinc-950/60 rounded-xl p-2.5 border border-zinc-100 dark:border-zinc-800/60 overflow-hidden"
+              onMouseMove={handleCanvasMouseMove}
+              onMouseLeave={handleCanvasMouseLeave}
+            >
               <canvas
                 ref={canvasRef}
                 style={{ width: '100%', height: 'auto', maxWidth: 480, aspectRatio: '480/260' }}
-                className="block"
+                className="block cursor-crosshair"
               />
+
+              {/* Tooltip detail titik publikasi */}
+              {hoveredPub && (
+                <div
+                  style={{
+                    left: Math.min(Math.max(tooltipPos.x + 10, 10), 220),
+                    top: Math.min(Math.max(tooltipPos.y - 45, 10), 180)
+                  }}
+                  className="absolute z-20 pointer-events-none p-2.5 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 text-white shadow-xl border border-zinc-700 text-[10px] max-w-[280px] backdrop-blur-xs transition-opacity"
+                >
+                  <div className="flex items-center gap-1.5 font-mono text-blue-300 font-bold">
+                    <span>{hoveredPub.publication_id || 'ID -'}</span>
+                    {hoveredPub.year && <span>• Tahun {hoveredPub.year}</span>}
+                  </div>
+                  <div className="font-semibold line-clamp-2 text-zinc-100 mt-0.5 leading-snug">
+                    {hoveredPub.title}
+                  </div>
+                  {toList(hoveredPub.brin_author).length > 0 && (
+                    <div className="text-zinc-400 truncate mt-1">
+                      ✍️ {toList(hoveredPub.brin_author).slice(0, 2).join('; ')}
+                    </div>
+                  )}
+                  {toList(hoveredPub.research_center).length > 0 && (
+                    <div className="text-zinc-400 truncate mt-0.5 text-[9px]">
+                      🏢 {toList(hoveredPub.research_center)[0]}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Year Selector Tiles (Interactive) */}
@@ -350,7 +483,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
 
               {/* Footnote */}
               <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1.5 border-t border-zinc-100 dark:border-zinc-800/60">
-                ⓘ Titik biru mewakili kepadatan proporsi publikasi pada tahun dan bidang yang sedang aktif.
+                ⓘ Setiap 1 titik mewakili 1 publikasi yang diurutkan berurutan berdasarkan ID publikasi.
               </p>
             </div>
           </div>
