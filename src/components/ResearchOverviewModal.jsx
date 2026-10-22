@@ -317,8 +317,8 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   ───────────────────────────────────────────────────────── */
   const gridInfo = useMemo(() => {
     const N = sortedPublications.length
-    const width = 480
-    const height = 240
+    const width = 600
+    const height = 300
     if (N === 0) {
       return { cols: 1, rows: 1, cellWidth: width, cellHeight: height, dotSize: 4, offsetX: 0, offsetY: 0, N: 0 }
     }
@@ -351,8 +351,8 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     if (!ctx) return
 
     const dpr = window.devicePixelRatio || 1
-    const width = 480
-    const height = 240
+    const width = 600
+    const height = 300
     canvas.width = width * dpr
     canvas.height = height * dpr
     ctx.scale(dpr, dpr)
@@ -412,8 +412,8 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     const rect = canvas.getBoundingClientRect()
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
-    const scaleX = 480 / rect.width
-    const scaleY = 240 / rect.height
+    const scaleX = 600 / rect.width
+    const scaleY = 300 / rect.height
     const canvasX = mouseX * scaleX
     const canvasY = mouseY * scaleY
 
@@ -529,21 +529,21 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
 
             {/* Dot Matrix Canvas with Tooltip */}
             <div
-              className="relative w-full flex items-center justify-center bg-zinc-50/60 dark:bg-zinc-950/60 rounded-xl p-2.5 border border-zinc-100 dark:border-zinc-800/60 overflow-hidden"
+              className="relative w-full overflow-hidden"
               onMouseMove={handleCanvasMouseMove}
               onMouseLeave={handleCanvasMouseLeave}
             >
               <canvas
                 ref={canvasRef}
-                style={{ width: '100%', height: 'auto', maxWidth: 480, aspectRatio: '480/240' }}
-                className="block cursor-crosshair"
+                style={{ width: '100%', height: 'auto', aspectRatio: '2/1' }}
+                className="w-full block cursor-crosshair"
               />
 
               {hoveredPub && (
                 <div
                   style={{
-                    left: Math.min(Math.max(tooltipPos.x + 10, 10), 220),
-                    top: Math.min(Math.max(tooltipPos.y - 45, 10), 160)
+                    left: tooltipPos.x > 260 ? Math.max(8, tooltipPos.x - 290) : tooltipPos.x + 12,
+                    top: Math.max(8, Math.min(tooltipPos.y - 45, 170))
                   }}
                   className="absolute z-20 pointer-events-none p-2.5 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 text-white shadow-xl border border-zinc-700 text-[10px] max-w-[280px] backdrop-blur-xs transition-opacity"
                 >
