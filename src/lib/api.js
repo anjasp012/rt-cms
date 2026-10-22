@@ -294,6 +294,49 @@ export async function bulkDeletePublications(ids) {
   });
 }
 
+export async function importPublications(file, mode = 'create_or_update') {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('mode', mode);
+
+  const jwt = localStorage.getItem('rt_jwt');
+  const headers = {};
+  if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
+
+  const res = await fetch(`${API_BASE}/admin/publications/import`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let errDetail = 'Gagal mengimpor data publikasi';
+    try {
+      const errJson = await res.json();
+      errDetail = errJson.detail || errDetail;
+    } catch (_) {}
+    throw new Error(errDetail);
+  }
+
+  return res.json();
+}
+
+export async function downloadPublicationTemplate(format = 'xlsx') {
+  const jwt = localStorage.getItem('rt_jwt');
+  const headers = {};
+  if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
+
+  const res = await fetch(`${API_BASE}/admin/publications/template?format=${format}`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    throw new Error('Gagal mengunduh template publikasi');
+  }
+
+  return res.blob();
+}
+
 // 📁 6. FILE UPLOAD
 export async function uploadFile(file) {
   const formData = new FormData();

@@ -102,7 +102,7 @@ export default function Dashboard({ username, onLogout }) {
     modules: 'Kelola Peran & Tantangan',
     usage: 'Dashboard',
     suggestions: 'Usulan Riset Pengunjung',
-    publications: 'Publications',
+    publications: 'Daftar Publikasi Riset BRIN',
   }
 
   const verifyHealth = useCallback(async () => {
@@ -338,7 +338,7 @@ export default function Dashboard({ username, onLogout }) {
     },
     {
       id: 'publications',
-      label: 'Publications',
+      label: 'Daftar Publikasi',
       icon: BookOpen,
       count: publications.length,
     },
