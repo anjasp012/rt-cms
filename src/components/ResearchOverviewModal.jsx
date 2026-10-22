@@ -128,10 +128,10 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     return () => { mounted = false }
   }, [open, selectedYearId, selectedFieldName])
 
-  /* ── 1. Hamparan titik dari server (mendukung bitstring '1'/'0' atau array) ── */
+  /* ── 1. Hamparan titik dari server (bitstring '1'/'0') ── */
   const hamparan = useMemo(() => {
-    return overviewData?.hamparan || overviewData?.hamparan_mask || ''
-  }, [overviewData?.hamparan, overviewData?.hamparan_mask])
+    return overviewData?.hamparan || ''
+  }, [overviewData?.hamparan])
 
   const totalPubs = overviewData?.total_publications ?? publications.length
 
