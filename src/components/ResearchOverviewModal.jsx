@@ -72,17 +72,31 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   const [selectedFieldName, setSelectedFieldName] = useState('ALL')
   const [selectedYearId, setSelectedYearId] = useState('ALL')
   const canvasRef = useRef(null)
+  const [canvasNode, setCanvasNode] = useState(null)
+  const [renderTick, setRenderTick] = useState(0)
 
   // Hover state untuk kanvas titik publikasi
   const [hoveredPub, setHoveredPub] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
-  // Reset filter ke ALL setiap kali modal dibuka
+  // Reset filter ke ALL setiap kali modal dibuka & trigger render tick beruntun saat dialog mount
   useEffect(() => {
     if (open) {
       setSelectedFieldName('ALL')
       setSelectedYearId('ALL')
       setHoveredPub(null)
+
+      const raf = requestAnimationFrame(() => setRenderTick(t => t + 1))
+      const t1 = setTimeout(() => setRenderTick(t => t + 1), 60)
+      const t2 = setTimeout(() => setRenderTick(t => t + 1), 180)
+      const t3 = setTimeout(() => setRenderTick(t => t + 1), 350)
+
+      return () => {
+        cancelAnimationFrame(raf)
+        clearTimeout(t1)
+        clearTimeout(t2)
+        clearTimeout(t3)
+      }
     }
   }, [open])
 
@@ -345,7 +359,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   ───────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!open) return
-    const canvas = canvasRef.current
+    const canvas = canvasRef.current || canvasNode
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -369,7 +383,8 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
 
     const { cols, cellWidth, cellHeight, dotSize, offsetX, offsetY } = gridInfo
     const isAllField = !selectedField || selectedField.id === 'ALL' || selectedFieldName === 'ALL'
-    const activeFieldName = selectedField.name ? selectedField.name.toLowerCase() : ''
+    const isAllYear = selectedYearId === 'ALL'
+    const activeFieldName = !isAllField && selectedField.name ? selectedField.name.toLowerCase() : ''
 
     for (let i = 0; i < N; i++) {
       const pub = sortedPublications[i]
@@ -378,9 +393,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       const x = col * cellWidth + offsetX
       const y = row * cellHeight + offsetY
 
-      const pubFields = toList(pub.field).map(f => f.trim().toLowerCase())
-      const isFieldMatch = isAllField || pubFields.includes(activeFieldName)
-      const isYearMatch = selectedYearId === 'ALL' || (pub.year && String(pub.year) === selectedYearId)
+      // Optimasi drastis: jika Semua Bidang atau Semua Tahun, hindari parsing string ribuan kali
+      const isFieldMatch = isAllField ? true : toList(pub.field).some(f => f.trim().toLowerCase() === activeFieldName)
+      const isYearMatch = isAllYear ? true : (pub.year && String(pub.year) === selectedYearId)
 
       if (isFieldMatch && isYearMatch) {
         ctx.fillStyle = '#2563eb' // Biru pekat aktif
@@ -392,16 +407,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
         ctx.fillStyle = '#e4e4e7' // Abu-abu netral
       }
 
-      // Render sebagai kotak pixel (bukan bulat)
-      if (dotSize >= 6 && typeof ctx.roundRect === 'function') {
-        ctx.beginPath()
-        ctx.roundRect(x, y, dotSize, dotSize, 1.5)
-        ctx.fill()
-      } else {
-        ctx.fillRect(x, y, dotSize, dotSize)
-      }
+      ctx.fillRect(x, y, dotSize, dotSize)
     }
-  }, [open, sortedPublications, gridInfo, selectedField, selectedFieldName, selectedYearId])
+  }, [open, canvasNode, renderTick, sortedPublications, gridInfo, selectedField, selectedFieldName, selectedYearId])
 
   /* ─────────────────────────────────────────────────────────
      9. HOVER MOUSE HANDLER
@@ -529,12 +537,15 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
 
             {/* Dot Matrix Canvas with Tooltip */}
             <div
-              className="relative w-full overflow-hidden"
+              className="relative w-full overflow-hidden min-h-[200px] bg-zinc-50/50 dark:bg-zinc-950/50 flex items-center justify-center"
               onMouseMove={handleCanvasMouseMove}
               onMouseLeave={handleCanvasMouseLeave}
             >
               <canvas
-                ref={canvasRef}
+                ref={(el) => {
+                  canvasRef.current = el
+                  if (el && el !== canvasNode) setCanvasNode(el)
+                }}
                 style={{ width: '100%', height: 'auto', aspectRatio: '2/1' }}
                 className="w-full block cursor-crosshair"
               />
