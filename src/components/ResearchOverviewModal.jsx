@@ -119,39 +119,41 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       return BIDANG_FALLBACK.map(b => ({
         name: b.name,
         countAll: 0,
-        countSince2022: 0,
         Icon: b.Icon
       }))
     }
 
     return Array.from(fieldMap.entries())
-      .map(([name, countAll]) => {
-        // Hitung juga yang sejak 2022
-        let countSince2022 = 0
-        sortedPublications.forEach(pub => {
-          if (pub.year && pub.year >= 2022 && toList(pub.field).some(f => f.trim().toLowerCase() === name.toLowerCase())) {
-            countSince2022++
-          }
-        })
-
-        return {
-          name,
-          countAll,
-          countSince2022,
-          Icon: getFieldIcon(name)
-        }
-      })
+      .map(([name, countAll]) => ({
+        name,
+        countAll,
+        Icon: getFieldIcon(name)
+      }))
       .sort((a, b) => b.countAll - a.countAll)
   }, [sortedPublications])
 
-  // Hitung jumlah seluruh publikasi sejak 2022
-  const totalCountSince2022 = useMemo(() => {
-    let count = 0
+  /* ─────────────────────────────────────────────────────────
+     2.5. TAHUN TERBAWAH DARI DATA & TAHUN PATOKAN AKTIF
+  ───────────────────────────────────────────────────────── */
+  const minYear = useMemo(() => {
+    let min = null
     sortedPublications.forEach(pub => {
-      if (pub.year && pub.year >= 2022) count++
+      const y = Number(pub.year)
+      if (!isNaN(y) && y > 1900 && y < 2035) {
+        if (min === null || y < min) min = y
+      }
     })
-    return count
+    return min || 2022
   }, [sortedPublications])
+
+  // Tahun patokan 'sejak': jika filter tahun dipilih, pakai tahun tersebut; jika ALL, pakai tahun terbawah dari data
+  const activeSinceYear = useMemo(() => {
+    if (selectedYearId && selectedYearId !== 'ALL') {
+      const parsed = Number(selectedYearId)
+      if (!isNaN(parsed)) return parsed
+    }
+    return minYear
+  }, [selectedYearId, minYear])
 
   // Bidang yang aktif dipilih (default 'ALL' = tampilkan semua tanpa filter)
   const selectedField = useMemo(() => {
@@ -160,7 +162,6 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
         name: 'Semua Bidang Riset',
         id: 'ALL',
         countAll: sortedPublications.length,
-        countSince2022: totalCountSince2022,
         Icon: Layers
       }
     }
@@ -169,10 +170,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       name: 'Semua Bidang Riset',
       id: 'ALL',
       countAll: sortedPublications.length,
-      countSince2022: totalCountSince2022,
       Icon: Layers
     }
-  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length, totalCountSince2022])
+  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length])
 
   /* ─────────────────────────────────────────────────────────
      3. FILTER PUBLIKASI PADA BIDANG AKTIF
@@ -185,6 +185,18 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
       return fields.some(f => f.trim().toLowerCase() === target)
     })
   }, [sortedPublications, selectedField, selectedFieldName])
+
+  // Hitung jumlah publikasi pada bidang aktif sejak tahun patokan (activeSinceYear)
+  const countSinceActiveYear = useMemo(() => {
+    let count = 0
+    fieldPubs.forEach(pub => {
+      const y = Number(pub.year)
+      if (!isNaN(y) && y >= activeSinceYear) {
+        count++
+      }
+    })
+    return count
+  }, [fieldPubs, activeSinceYear])
 
   /* ─────────────────────────────────────────────────────────
      4. HITUNG PUSAT RISET TERBANYAK (TOP 3 TERATAS UNIQUE)
@@ -613,15 +625,15 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
               <div className="flex items-baseline gap-6">
                 <div>
                   <span className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
-                    {selectedField.countSince2022.toLocaleString('id-ID')}
+                    {countSinceActiveYear.toLocaleString('id-ID')}
                   </span>
                   <span className="block text-[10px] text-zinc-400">
-                    Publikasi sejak 2022
+                    Publikasi sejak {activeSinceYear}
                   </span>
                 </div>
                 <div>
                   <span className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">
-                    {selectedField.countAll.toLocaleString('id-ID')}
+                    {fieldPubs.length.toLocaleString('id-ID')}
                   </span>
                   <span className="block text-[10px] text-zinc-400">
                     Publikasi seluruh tahun
