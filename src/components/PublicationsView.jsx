@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -82,7 +82,6 @@ const emptyForm = () => ({
 
 export default function PublicationsView({
   publications = [],
-  allPublications = [],
   loading = false,
   onSave,
   onDelete,
@@ -166,16 +165,15 @@ export default function PublicationsView({
   }, [publications, search, filterCoverage, filterSource, filterYear, filterField])
 
   // Reset to page 1 when filters/search change
-  const filteredWithReset = useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1)
-    return filtered
-  }, [filtered]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtered])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginatedFiltered = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE
     return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, currentPage, PAGE_SIZE])
+  }, [filtered, currentPage])
 
   /* ── Form helpers ── */
   const openCreate = () => {
@@ -1186,7 +1184,7 @@ export default function PublicationsView({
       <ResearchOverviewModal
         open={overviewOpen}
         onClose={() => setOverviewOpen(false)}
-        publications={allPublications.length > 0 ? allPublications : publications}
+        publications={publications}
       />
 
       {/* ─────────────────────────────────────────────────────
