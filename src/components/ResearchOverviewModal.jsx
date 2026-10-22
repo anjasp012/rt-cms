@@ -349,9 +349,10 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
         ctx.fillStyle = '#e4e4e7' // Abu-abu netral
       }
 
-      if (dotSize >= 5) {
+      // Render sebagai kotak pixel (bukan bulat)
+      if (dotSize >= 6 && typeof ctx.roundRect === 'function') {
         ctx.beginPath()
-        ctx.arc(x + dotSize / 2, y + dotSize / 2, dotSize / 2, 0, Math.PI * 2)
+        ctx.roundRect(x, y, dotSize, dotSize, 1.5)
         ctx.fill()
       } else {
         ctx.fillRect(x, y, dotSize, dotSize)
@@ -392,8 +393,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
-        hideCloseButton={true}
-        className="max-w-6xl w-[96vw] max-h-[92vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-2xl shadow-2xl space-y-4"
+        className="max-w-6xl w-[96vw] max-h-[92vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [&>button.absolute]:hidden border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-2xl shadow-2xl space-y-4"
       >
         <DialogTitle className="sr-only">Sekilas Riset BRIN</DialogTitle>
 
