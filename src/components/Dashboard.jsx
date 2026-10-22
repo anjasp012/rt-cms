@@ -323,25 +323,21 @@ export default function Dashboard({ username, onLogout }) {
       id: 'innovations',
       label: 'Daftar Solusi',
       icon: Lightbulb,
-      count: innovations.length,
     },
     {
       id: 'modules',
       label: 'Peran & Tantangan',
       icon: Compass,
-      count: personas.length + zones.length,
     },
     {
       id: 'suggestions',
       label: 'Usulan Riset Pengunjung',
       icon: MessageSquare,
-      count: suggestions.length,
     },
     {
       id: 'publications',
       label: 'Daftar Publikasi',
       icon: BookOpen,
-      count: publications.length,
     },
   ]
 
@@ -396,20 +392,13 @@ export default function Dashboard({ username, onLogout }) {
                     setCurrentView(item.id)
                     setSidebarOpen(false)
                   }}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-md text-xs font-medium transition-all ${active
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-xs font-medium transition-all ${active
                     ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-sm'
                     : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${active ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.count !== undefined && (
-                    <span className="text-[11px] text-zinc-400 font-mono">
-                      {item.count}
-                    </span>
-                  )}
+                  <Icon className={`w-4 h-4 ${active ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}`} />
+                  <span>{item.label}</span>
                 </button>
               )
             })}
