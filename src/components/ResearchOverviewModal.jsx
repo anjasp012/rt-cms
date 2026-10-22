@@ -128,10 +128,10 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     return () => { mounted = false }
   }, [open, selectedYearId, selectedFieldName])
 
-  /* ── 1. Hamparan titik dari server (fallback ke publications prop) ── */
+  /* ── 1. Hamparan titik dari server (mendukung bitstring '1'/'0' atau array) ── */
   const hamparan = useMemo(() => {
-    return overviewData?.hamparan || []
-  }, [overviewData?.hamparan])
+    return overviewData?.hamparan || overviewData?.hamparan_mask || ''
+  }, [overviewData?.hamparan, overviewData?.hamparan_mask])
 
   const totalPubs = overviewData?.total_publications ?? publications.length
 
@@ -273,13 +273,15 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     const { cols, cellWidth, cellHeight, dotSize, offsetX, offsetY } = gridInfo
 
     for (let i = 0; i < N; i++) {
-      const dot = hamparan[i]
+      const isActive = typeof hamparan === 'string'
+        ? hamparan[i] === '1'
+        : Boolean(hamparan[i]?.is_active)
       const col = i % cols
       const row = Math.floor(i / cols)
       const x = col * cellWidth + offsetX
       const y = row * cellHeight + offsetY
 
-      ctx.fillStyle = dot.is_active ? '#2563eb' : '#e4e4e7'
+      ctx.fillStyle = isActive ? '#2563eb' : '#e4e4e7'
       ctx.fillRect(x, y, dotSize, dotSize)
     }
   }, [open, canvasNode, renderTick, hamparan, gridInfo, dataLoading])
@@ -302,7 +304,18 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     const idx = row * gridInfo.cols + col
 
     if (idx >= 0 && idx < N) {
-      setHoveredPub(hamparan[idx])
+      const isActive = typeof hamparan === 'string'
+        ? hamparan[idx] === '1'
+        : Boolean(hamparan[idx]?.is_active)
+      const pubId = Array.isArray(hamparan) && hamparan[idx]?.id_publication
+        ? hamparan[idx].id_publication
+        : `#${idx + 1}`
+
+      setHoveredPub({
+        id_publication: pubId,
+        index: idx + 1,
+        is_active: isActive
+      })
       setTooltipPos({ x: mouseX, y: mouseY })
     } else {
       setHoveredPub(null)
@@ -431,7 +444,11 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
                   className="absolute z-20 pointer-events-none p-2.5 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 text-white shadow-xl border border-zinc-700 text-[10px] max-w-[280px] backdrop-blur-xs transition-opacity"
                 >
                   <div className="flex items-center gap-1.5 font-mono text-blue-300 font-bold">
-                    <span>{hoveredPub.id_publication || hoveredPub.publication_id || 'ID -'}</span>
+                    <span>
+                      {hoveredPub.id_publication?.startsWith('#')
+                        ? `Titik ${hoveredPub.id_publication}`
+                        : (hoveredPub.id_publication || `Titik #${hoveredPub.index}`)}
+                    </span>
                     {hoveredPub.is_active !== undefined && (
                       <span className={hoveredPub.is_active ? 'text-emerald-400 font-semibold' : 'text-zinc-400'}>
                         {hoveredPub.is_active ? '• Aktif Terpilih' : '• Di Luar Filter'}
