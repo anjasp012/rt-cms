@@ -401,7 +401,6 @@ export default function PublicationsView({
               <tr>
                 <th className="p-3 w-12 text-center">No</th>
                 <th className="p-3 text-left">Nama / Judul Publikasi</th>
-                <th className="p-3 w-40 text-left">Cakupan & Sumber</th>
                 <th className="p-3 w-48 text-left">Bidang Riset</th>
                 <th className="p-3 w-44 text-left">Provinsi & Wilayah</th>
                 <th className="p-3 w-24 text-center">Dihitung</th>
@@ -411,14 +410,14 @@ export default function PublicationsView({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={6} className="p-12 text-center text-zinc-500 font-mono">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
                     <span>Memuat daftar publikasi BRIN...</span>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-zinc-500 font-mono">
+                  <td colSpan={6} className="p-12 text-center text-zinc-500 font-mono">
                     <BookOpen className="w-8 h-8 mx-auto mb-2 text-zinc-400 opacity-50" />
                     <span>Tidak ada data publikasi yang cocok</span>
                   </td>
@@ -489,26 +488,6 @@ export default function PublicationsView({
                                 <span className="truncate max-w-[220px]">{center}</span>
                               </span>
                             ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Cakupan & Sumber */}
-                    <td className="p-3 align-middle">
-                      <div className="space-y-1">
-                        {item.coverage ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 font-medium text-xs border border-zinc-200 dark:border-zinc-700">
-                            <Globe className="w-3 h-3 text-blue-500" />
-                            <span>{item.coverage}</span>
-                          </div>
-                        ) : (
-                          <span className="text-zinc-400 italic text-[11px]">-</span>
-                        )}
-                        {item.source && (
-                          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span>{item.source}</span>
                           </div>
                         )}
                       </div>
