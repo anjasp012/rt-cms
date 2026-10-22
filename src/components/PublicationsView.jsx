@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { exportPublicationsToExcel } from '@/lib/excelExport'
 import PublicationImportModal from './PublicationImportModal'
+import ResearchOverviewModal from './ResearchOverviewModal'
 import { toast } from 'sonner'
 
 /* ─────────────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ export default function PublicationsView({
   const [saving, setSaving] = useState(false)
 
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [overviewOpen, setOverviewOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
 
@@ -337,6 +339,17 @@ export default function PublicationsView({
           >
             <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Import Excel/CSV</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOverviewOpen(true)}
+            className="h-9 text-xs font-medium gap-1.5 border-blue-200 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60"
+            title="Lihat infografis visualisasi data riset BRIN"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Sekilas Riset BRIN</span>
           </Button>
 
           <Button
@@ -1023,6 +1036,15 @@ export default function PublicationsView({
             window.location.reload()
           }
         }}
+      />
+
+      {/* ─────────────────────────────────────────────────────
+          SEKILAS RISET BRIN OVERVIEW MODAL
+      ───────────────────────────────────────────────────── */}
+      <ResearchOverviewModal
+        open={overviewOpen}
+        onClose={() => setOverviewOpen(false)}
+        publications={publications}
       />
 
       {/* ─────────────────────────────────────────────────────
