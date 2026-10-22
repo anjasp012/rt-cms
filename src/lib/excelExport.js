@@ -216,15 +216,20 @@ export function exportPublicationsToExcel(data, customTitle = 'Daftar Publikasi 
   const rowsHtml = data
     .map((item, index) => {
       const rowBg = index % 2 === 0 ? '#FFFFFF' : '#F8FAFC'
+      const formatList = (val) => {
+        if (!val) return ''
+        if (Array.isArray(val)) return val.join('; ')
+        return String(val)
+      }
       const idText = escapeHtml(item.publication_id || '')
       const titleText = escapeHtml(item.title || '')
       const mediaText = escapeHtml(item.publication_media || '')
       const coverageText = escapeHtml(item.coverage || '')
       const yearText = item.year != null ? String(item.year) : ''
       const sourceText = escapeHtml(item.source || '')
-      const authorText = escapeHtml(item.brin_author || '')
-      const researchCenterText = escapeHtml(item.research_center || '')
-      const fieldText = escapeHtml(item.field || '')
+      const authorText = escapeHtml(formatList(item.brin_author))
+      const researchCenterText = escapeHtml(formatList(item.research_center))
+      const fieldText = escapeHtml(formatList(item.field))
       const provinceText = escapeHtml(item.province || '')
       const regionText = escapeHtml(item.region || '')
       const notesText = escapeHtml(item.data_notes || '')

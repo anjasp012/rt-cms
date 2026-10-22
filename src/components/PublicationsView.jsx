@@ -45,6 +45,22 @@ import ResearchOverviewModal from './ResearchOverviewModal'
 import { toast } from 'sonner'
 
 /* ─────────────────────────────────────────────────────────────
+   Helper: safely convert value (Array, JSON string, or semicolon string) to Array
+───────────────────────────────────────────────────────────── */
+export const toList = (val) => {
+  if (!val) return []
+  if (Array.isArray(val)) return val.map(x => String(x).trim()).filter(Boolean)
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val)
+      if (Array.isArray(parsed)) return parsed.map(x => String(x).trim()).filter(Boolean)
+    } catch (e) {}
+    return val.split(';').map(x => x.trim()).filter(Boolean)
+  }
+  return []
+}
+
+/* ─────────────────────────────────────────────────────────────
    Empty form state
 ───────────────────────────────────────────────────────────── */
 const emptyForm = () => ({
@@ -106,8 +122,13 @@ export default function PublicationsView({
   }, [publications])
 
   const fieldOptions = useMemo(() => {
-    const vals = [...new Set(publications.map(p => p.field).filter(Boolean))]
-    return vals.sort()
+    const set = new Set()
+    publications.forEach(p => {
+      toList(p.field).forEach(f => {
+        if (f) set.add(f)
+      })
+    })
+    return Array.from(set).sort()
   }, [publications])
 
   /* ── Filtered list ── */
@@ -116,15 +137,21 @@ export default function PublicationsView({
       if (filterCoverage !== 'ALL' && pub.coverage !== filterCoverage) return false
       if (filterSource !== 'ALL' && pub.source !== filterSource) return false
       if (filterYear !== 'ALL' && String(pub.year) !== filterYear) return false
-      if (filterField !== 'ALL' && pub.field !== filterField) return false
+      if (filterField !== 'ALL') {
+        const fields = toList(pub.field)
+        if (!fields.includes(filterField)) return false
+      }
       if (!search.trim()) return true
       const q = search.toLowerCase()
+      const authorsStr = toList(pub.brin_author).join(' ').toLowerCase()
+      const centersStr = toList(pub.research_center).join(' ').toLowerCase()
+      const fieldsStr = toList(pub.field).join(' ').toLowerCase()
       return (
         pub.title?.toLowerCase().includes(q) ||
         pub.publication_id?.toLowerCase().includes(q) ||
-        pub.brin_author?.toLowerCase().includes(q) ||
-        pub.research_center?.toLowerCase().includes(q) ||
-        pub.field?.toLowerCase().includes(q) ||
+        authorsStr.includes(q) ||
+        centersStr.includes(q) ||
+        fieldsStr.includes(q) ||
         pub.province?.toLowerCase().includes(q) ||
         pub.region?.toLowerCase().includes(q) ||
         pub.source?.toLowerCase().includes(q) ||
@@ -149,9 +176,9 @@ export default function PublicationsView({
       coverage:          pub.coverage        || '',
       year:              pub.year != null    ? String(pub.year) : '',
       source:            pub.source          || '',
-      brin_author:       pub.brin_author     || '',
-      research_center:   pub.research_center || '',
-      field:             pub.field           || '',
+      brin_author:       toList(pub.brin_author).join('; '),
+      research_center:   toList(pub.research_center).join('; '),
+      field:             toList(pub.field).join('; '),
       province:          pub.province        || '',
       region:            pub.region          || '',
       data_notes:        pub.data_notes      || '',
@@ -176,6 +203,9 @@ export default function PublicationsView({
         ...formData,
         year: formData.year ? parseInt(formData.year, 10) : null,
         publication_id: formData.publication_id.trim() || null,
+        brin_author: toList(formData.brin_author),
+        research_center: toList(formData.research_center),
+        field: toList(formData.field),
       }
       await onSave(editingId, payload)
       setFormOpen(false)
@@ -432,18 +462,34 @@ export default function PublicationsView({
                           {item.title}
                         </div>
 
-                        {item.brin_author && (
-                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-1">
-                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                              ✍️ {item.brin_author}
-                            </span>
+                        {/* Authors chips */}
+                        {toList(item.brin_author).length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                            {toList(item.brin_author).map((author, aIdx) => (
+                              <span
+                                key={aIdx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-medium"
+                              >
+                                <span>✍️</span>
+                                <span className="truncate max-w-[200px]">{author}</span>
+                              </span>
+                            ))}
                           </div>
                         )}
 
-                        {item.research_center && (
-                          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 line-clamp-1">
-                            🏢 {item.research_center}
-                          </p>
+                        {/* Research Center chips */}
+                        {toList(item.research_center).length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                            {toList(item.research_center).map((center, cIdx) => (
+                              <span
+                                key={cIdx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 text-[10px]"
+                              >
+                                <span>🏢</span>
+                                <span className="truncate max-w-[220px]">{center}</span>
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -470,10 +516,17 @@ export default function PublicationsView({
 
                     {/* Bidang */}
                     <td className="p-3 align-middle">
-                      {item.field ? (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 font-medium text-xs border border-amber-200 dark:border-amber-800/40">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                          <span>{item.field}</span>
+                      {toList(item.field).length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {toList(item.field).map((f, fIdx) => (
+                            <div
+                              key={fIdx}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 font-medium text-[11px] border border-amber-200 dark:border-amber-800/40 w-fit"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="leading-tight">{f}</span>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className="text-zinc-400 italic text-[11px]">-</span>
@@ -611,16 +664,25 @@ export default function PublicationsView({
                     <BookOpen className="w-3.5 h-3.5 text-blue-500" />
                     <span>Penulis BRIN & Media Publikasi</span>
                   </div>
-                  <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2">
-                    {detailItem.brin_author && (
-                      <div>
-                        <span className="text-zinc-400 font-mono">Penulis BRIN:</span>{' '}
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.brin_author}</span>
+                  <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                    {toList(detailItem.brin_author).length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-zinc-400 font-mono text-[11px]">Penulis BRIN:</span>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {toList(detailItem.brin_author).map((author, aIdx) => (
+                            <span
+                              key={aIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-medium text-xs"
+                            >
+                              <span>✍️</span> {author}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {detailItem.publication_media && (
                       <div>
-                        <span className="text-zinc-400 font-mono">Media Publikasi:</span>{' '}
+                        <span className="text-zinc-400 font-mono text-[11px]">Media Publikasi:</span>{' '}
                         <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.publication_media}</span>
                       </div>
                     )}
@@ -633,22 +695,40 @@ export default function PublicationsView({
                     <Building2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Pusat Riset & Bidang</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800">
-                    {detailItem.research_center && (
-                      <div className="sm:col-span-2">
-                        <span className="text-zinc-400 font-mono">Pusat Riset / Satker:</span>{' '}
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.research_center}</span>
+                  <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                    {toList(detailItem.research_center).length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-zinc-400 font-mono text-[11px]">Pusat Riset / Satker:</span>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {toList(detailItem.research_center).map((center, cIdx) => (
+                            <span
+                              key={cIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-xs"
+                            >
+                              <span>🏢</span> {center}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {detailItem.field && (
-                      <div>
-                        <span className="text-zinc-400 font-mono">Bidang Riset:</span>{' '}
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.field}</span>
+                    {toList(detailItem.field).length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-zinc-400 font-mono text-[11px]">Bidang Riset:</span>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {toList(detailItem.field).map((field, fIdx) => (
+                            <span
+                              key={fIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-medium text-xs"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {field}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {detailItem.source && (
                       <div>
-                        <span className="text-zinc-400 font-mono">Sumber Indeks:</span>{' '}
+                        <span className="text-zinc-400 font-mono text-[11px]">Sumber Indeks:</span>{' '}
                         <span className="font-semibold text-zinc-800 dark:text-zinc-200">{detailItem.source}</span>
                       </div>
                     )}
@@ -840,39 +920,75 @@ export default function PublicationsView({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
-                  Penulis BRIN
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                    Penulis BRIN
+                  </label>
+                  <span className="text-[10px] text-zinc-400 font-mono">Pisahkan dengan titik koma (;)</span>
+                </div>
                 <Input
-                  placeholder="Nama penulis afiliasi BRIN (gunakan titik koma bila jamak: Penulis A; Penulis B)"
+                  placeholder="e.g. Arifan Jaya Syahbana; Dwi Sarah; Eko Soebowo"
                   value={formData.brin_author}
                   onChange={e => handleFormChange('brin_author', e.target.value)}
                   className="h-9 text-xs"
                 />
+                {toList(formData.brin_author).length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {toList(formData.brin_author).map((a, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[10px]">
+                        ✍️ {a}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
-                    Pusat Riset / Satker
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                      Pusat Riset / Satker
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-mono">(;)</span>
+                  </div>
                   <Input
-                    placeholder="Pusat Riset atau Satuan Kerja BRIN"
+                    placeholder="e.g. Pusat Riset Teknologi Hidrodinamika; Pusat Riset Kebencanaan Geologi"
                     value={formData.research_center}
                     onChange={e => handleFormChange('research_center', e.target.value)}
                     className="h-9 text-xs"
                   />
+                  {toList(formData.research_center).length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {toList(formData.research_center).map((c, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-[10px]">
+                          🏢 {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
-                    Bidang Riset
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
+                      Bidang Riset
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-mono">(;)</span>
+                  </div>
                   <Input
-                    placeholder="e.g. Bumi, Laut & Kebencanaan; Antariksa"
+                    placeholder="e.g. Bumi, Laut & Kebencanaan; Transportasi & Antariksa"
                     value={formData.field}
                     onChange={e => handleFormChange('field', e.target.value)}
                     className="h-9 text-xs"
                   />
+                  {toList(formData.field).length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {toList(formData.field).map((f, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[10px]">
+                          <span className="w-1 h-1 rounded-full bg-amber-500"></span> {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
