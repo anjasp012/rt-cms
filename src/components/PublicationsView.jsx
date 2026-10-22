@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,6 +40,7 @@ import {
   Info
 } from 'lucide-react'
 import { exportPublicationsToExcel } from '@/lib/excelExport'
+import { fetchPublicationsPaginated, fetchPublicationFilterOptions } from '@/lib/api'
 import PublicationImportModal from './PublicationImportModal'
 import ResearchOverviewModal from './ResearchOverviewModal'
 import { toast } from 'sonner'
@@ -81,15 +82,21 @@ const emptyForm = () => ({
 })
 
 export default function PublicationsView({
-  publications = [],
-  loading = false,
   onSave,
   onDelete,
-  onReload,
 }) {
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterYear, setFilterYear] = useState('ALL')
   const [filterField, setFilterField] = useState('ALL')
+
+  // Server paginated state
+  const [items, setItems] = useState([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [yearOptions, setYearOptions] = useState([])
+  const [fieldOptions, setFieldOptions] = useState([])
 
   // Pagination
   const PAGE_SIZE = 100
@@ -106,60 +113,60 @@ export default function PublicationsView({
   const [overviewOpen, setOverviewOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
+  const [exporting, setExporting] = useState(false)
 
-  /* ── Derived filter options ── */
-  const yearOptions = useMemo(() => {
-    const vals = [...new Set(publications.map(p => p.year).filter(Boolean))]
-    return vals.sort((a, b) => b - a)
-  }, [publications])
+  // Load distinct filter options (years & fields) from server
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      const res = await fetchPublicationFilterOptions()
+      if (res?.years) setYearOptions(res.years)
+      if (res?.fields) setFieldOptions(res.fields)
+    } catch (_) {}
+  }, [])
 
-  const fieldOptions = useMemo(() => {
-    const set = new Set()
-    publications.forEach(p => {
-      toList(p.field).forEach(f => {
-        if (f) set.add(f)
-      })
-    })
-    return Array.from(set).sort()
-  }, [publications])
-
-  /* ── Filtered list ── */
-  const filtered = useMemo(() => {
-    return publications.filter(pub => {
-      if (filterYear !== 'ALL' && String(pub.year) !== filterYear) return false
-      if (filterField !== 'ALL') {
-        const fields = toList(pub.field)
-        if (!fields.includes(filterField)) return false
-      }
-      if (!search.trim()) return true
-      const q = search.toLowerCase()
-      const authorsStr = toList(pub.brin_author).join(' ').toLowerCase()
-      const centersStr = toList(pub.research_center).join(' ').toLowerCase()
-      const fieldsStr = toList(pub.field).join(' ').toLowerCase()
-      return (
-        pub.title?.toLowerCase().includes(q) ||
-        pub.publication_id?.toLowerCase().includes(q) ||
-        authorsStr.includes(q) ||
-        centersStr.includes(q) ||
-        fieldsStr.includes(q) ||
-        pub.province?.toLowerCase().includes(q) ||
-        pub.region?.toLowerCase().includes(q) ||
-        pub.source?.toLowerCase().includes(q) ||
-        pub.publication_media?.toLowerCase().includes(q)
-      )
-    })
-  }, [publications, search, filterYear, filterField])
-
-  // Reset to page 1 when filters/search change
   useEffect(() => {
-    setCurrentPage(1)
-  }, [filtered])
+    loadFilterOptions()
+  }, [loadFilterOptions])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginatedFiltered = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, currentPage])
+  // Debounce search query 300ms
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+      setCurrentPage(1)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Fetch paginated publications from server
+  const loadPublications = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetchPublicationsPaginated({
+        page: currentPage,
+        pageSize: PAGE_SIZE,
+        search: debouncedSearch,
+        year: filterYear,
+        field: filterField
+      })
+      if (res && res.items) {
+        setItems(res.items)
+        setTotalCount(res.total ?? 0)
+        setTotalPages(res.totalPages ?? 1)
+      } else if (Array.isArray(res)) {
+        setItems(res)
+        setTotalCount(res.length)
+        setTotalPages(Math.max(1, Math.ceil(res.length / PAGE_SIZE)))
+      }
+    } catch (err) {
+      toast.error(err.message || 'Gagal memuat data publikasi')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, debouncedSearch, filterYear, filterField])
+
+  useEffect(() => {
+    loadPublications()
+  }, [loadPublications])
 
   /* ── Form helpers ── */
   const openCreate = () => {
@@ -210,6 +217,8 @@ export default function PublicationsView({
       }
       await onSave(editingId, payload)
       setFormOpen(false)
+      loadPublications()
+      loadFilterOptions()
     } finally {
       setSaving(false)
     }
@@ -223,19 +232,41 @@ export default function PublicationsView({
   const handleExecuteDelete = async () => {
     if (itemToDelete) {
       await onDelete(itemToDelete.id)
+      setDeleteConfirmOpen(false)
+      setItemToDelete(null)
+      loadPublications()
+      loadFilterOptions()
     }
-    setDeleteConfirmOpen(false)
-    setItemToDelete(null)
   }
 
-  const handleExport = () => {
-    const dataToExport = filtered.length > 0 ? filtered : publications
-    if (dataToExport.length === 0) {
+  const handleExport = async () => {
+    if (totalCount === 0) {
       toast.error('Tidak ada data publikasi untuk diexport')
       return
     }
-    exportPublicationsToExcel(dataToExport)
-    toast.success(`${dataToExport.length} data publikasi berhasil diexport ke Excel`)
+    setExporting(true)
+    const toastId = toast.loading('Menyiapkan file Excel...')
+    try {
+      const fetchLimit = Math.min(totalCount, 5000)
+      const res = await fetchPublicationsPaginated({
+        page: 1,
+        pageSize: fetchLimit,
+        search: debouncedSearch,
+        year: filterYear,
+        field: filterField
+      })
+      const exportList = res?.items || items
+      if (exportList.length === 0) {
+        toast.error('Tidak ada data publikasi untuk diexport', { id: toastId })
+        return
+      }
+      exportPublicationsToExcel(exportList)
+      toast.success(`${exportList.length} data publikasi berhasil diexport ke Excel`, { id: toastId })
+    } catch (err) {
+      toast.error('Gagal mengekspor data: ' + err.message, { id: toastId })
+    } finally {
+      setExporting(false)
+    }
   }
 
   /* ─────────────────────────────────────────────────────────
@@ -273,7 +304,10 @@ export default function PublicationsView({
           <div className="relative">
             <select
               value={filterYear}
-              onChange={(e) => setFilterYear(e.target.value)}
+              onChange={(e) => {
+                setFilterYear(e.target.value)
+                setCurrentPage(1)
+              }}
               className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium"
             >
               <option value="ALL">Semua Tahun</option>
@@ -289,7 +323,10 @@ export default function PublicationsView({
             <div className="relative">
               <select
                 value={filterField}
-                onChange={(e) => setFilterField(e.target.value)}
+                onChange={(e) => {
+                  setFilterField(e.target.value)
+                  setCurrentPage(1)
+                }}
                 className="h-9 pl-3 pr-7 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400 appearance-none font-medium max-w-[160px] truncate"
               >
                 <option value="ALL">Semua Bidang ({fieldOptions.length})</option>
@@ -310,6 +347,7 @@ export default function PublicationsView({
                 setSearch('')
                 setFilterYear('ALL')
                 setFilterField('ALL')
+                setCurrentPage(1)
               }}
               className="h-9 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
@@ -386,7 +424,7 @@ export default function PublicationsView({
                     <span>Memuat daftar publikasi BRIN...</span>
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-zinc-500 font-mono">
                     <BookOpen className="w-8 h-8 mx-auto mb-2 text-zinc-400 opacity-50" />
@@ -394,7 +432,7 @@ export default function PublicationsView({
                   </td>
                 </tr>
               ) : (
-                paginatedFiltered.map((item, idx) => {
+                items.map((item, idx) => {
                   const absoluteIdx = (currentPage - 1) * PAGE_SIZE + idx
                   return (
                   <tr key={item.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors">
@@ -557,37 +595,41 @@ export default function PublicationsView({
         {/* Card Footer with Pagination */}
         <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono">
           <div>
-            Menampilkan <strong>{Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}</strong> dari <strong>{filtered.length.toLocaleString('id-ID')}</strong> hasil filter (<strong>{publications.length.toLocaleString('id-ID')}</strong> total)
+            Menampilkan <strong>{totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)}</strong> dari <strong>{totalCount.toLocaleString('id-ID')}</strong> data
           </div>
           {totalPages > 1 && (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || loading}
                 className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Halaman pertama"
               >«</button>
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || loading}
                 className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Halaman sebelumnya"
               >‹</button>
-              <span className="px-3 py-1 rounded bg-zinc-100 dark:bg-zinc-800">
+              <span className="px-3 py-1 rounded bg-zinc-100 dark:bg-zinc-800 font-semibold">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || loading}
                 className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Halaman berikutnya"
               >›</button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || loading}
                 className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Halaman terakhir"
               >»</button>
             </div>
           )}
           <div className="text-[11px] text-zinc-400">
-            {publications.filter(p => p.is_counted).length.toLocaleString('id-ID')} dihitung
+            Halaman {currentPage} dari {totalPages}
           </div>
         </div>
       </Card>
@@ -1126,11 +1168,8 @@ export default function PublicationsView({
         onClose={() => setImportModalOpen(false)}
         onSuccess={() => {
           setImportModalOpen(false)
-          if (onReload) {
-            onReload()
-          } else {
-            window.location.reload()
-          }
+          loadPublications()
+          loadFilterOptions()
         }}
       />
 
@@ -1140,7 +1179,6 @@ export default function PublicationsView({
       <ResearchOverviewModal
         open={overviewOpen}
         onClose={() => setOverviewOpen(false)}
-        publications={publications}
       />
 
       {/* ─────────────────────────────────────────────────────

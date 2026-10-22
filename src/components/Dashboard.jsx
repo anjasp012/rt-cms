@@ -25,8 +25,6 @@ import {
   createZone,
   updateZone,
   deleteZone,
-  fetchPublications,
-  fetchAllPublications,
   createPublication,
   updatePublication,
   deletePublication,
@@ -89,7 +87,6 @@ export default function Dashboard({ username, onLogout }) {
   const [suggestions, setSuggestions] = useState([])
   const [personas, setPersonas] = useState([])
   const [zones, setZones] = useState([])
-  const [publications, setPublications] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [apiStatus, setApiStatus] = useState('checking')
@@ -125,14 +122,12 @@ export default function Dashboard({ username, onLogout }) {
         suggestionsRes,
         personasRes,
         zonesRes,
-        pubRes,
       ] = await Promise.all([
         fetchInnovations().catch(() => []),
         fetchModuleUsage().catch(() => null),
         fetchSuggestions().catch(() => []),
         fetchPersonas().catch(() => []),
         fetchZones().catch(() => []),
-        fetchAllPublications().catch(() => [])
       ])
 
       if (Array.isArray(innoRes)) setInnovations(innoRes)
@@ -140,7 +135,6 @@ export default function Dashboard({ username, onLogout }) {
       if (Array.isArray(suggestionsRes)) setSuggestions(suggestionsRes)
       if (Array.isArray(personasRes)) setPersonas(personasRes)
       if (Array.isArray(zonesRes)) setZones(zonesRes)
-      if (Array.isArray(pubRes)) setPublications(pubRes)
 
       if (isManualRefresh) {
         toast.success('Data berhasil diperbarui')
@@ -295,7 +289,6 @@ export default function Dashboard({ username, onLogout }) {
         await createPublication(data)
         toast.success('Publication added successfully')
       }
-      loadData(false)
     } catch (err) {
       toast.error(err.message || 'Failed to save publication')
       throw err
@@ -306,9 +299,9 @@ export default function Dashboard({ username, onLogout }) {
     try {
       await deletePublication(id)
       toast.success('Publication deleted')
-      loadData(false)
     } catch (err) {
       toast.error(err.message || 'Failed to delete publication')
+      throw err
     }
   }
 
@@ -559,11 +552,8 @@ export default function Dashboard({ username, onLogout }) {
 
           {currentView === 'publications' && (
             <PublicationsView
-              publications={publications}
-              loading={loading}
               onSave={handleSavePublication}
               onDelete={handleDeletePublication}
-              onReload={() => loadData(false)}
             />
           )}
 

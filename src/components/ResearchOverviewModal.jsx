@@ -21,6 +21,7 @@ import {
   Calendar,
   Sparkles
 } from 'lucide-react'
+import { fetchPublicPublicationsOverview } from '@/lib/api'
 
 // Helper: Safely convert JSON, array, or semicolon string into string list
 const toList = (val) => {
@@ -71,6 +72,8 @@ const BIDANG_FALLBACK = [
 export default function ResearchOverviewModal({ open, onClose, publications = [] }) {
   const [selectedFieldName, setSelectedFieldName] = useState('ALL')
   const [selectedYearId, setSelectedYearId] = useState('ALL')
+  const [overviewData, setOverviewData] = useState(null)
+  const [dataLoading, setDataLoading] = useState(false)
   const canvasRef = useRef(null)
   const [canvasNode, setCanvasNode] = useState(null)
   const [renderTick, setRenderTick] = useState(0)
@@ -79,7 +82,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
   const [hoveredPub, setHoveredPub] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
-  // Reset filter ke ALL setiap kali modal dibuka & trigger render tick beruntun saat dialog mount
+  // Reset filter ke ALL setiap kali modal dibuka & trigger render tick
   useEffect(() => {
     if (open) {
       setSelectedFieldName('ALL')
@@ -100,237 +103,125 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     }
   }, [open])
 
-  /* ─────────────────────────────────────────────────────────
-     1. SORTING PUBLIKASI BERDASARKAN ID_PUBLIKASI
-  ───────────────────────────────────────────────────────── */
-  const sortedPublications = useMemo(() => {
-    return [...publications].sort((a, b) => {
-      const idA = a.publication_id || ''
-      const idB = b.publication_id || ''
-      if (!idA && !idB) return (a.title || '').localeCompare(b.title || '')
-      if (!idA) return 1
-      if (!idB) return -1
-      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' })
-    })
-  }, [publications])
+  // Fetch lightweight overview & boolean hamparan dari backend
+  useEffect(() => {
+    if (!open) return
+    let mounted = true
+    setDataLoading(true)
 
-  /* ─────────────────────────────────────────────────────────
-     2. EKSTRAK SEMUA BIDANG YANG UNIQUE DARI KOLOM 'FIELD'
-  ───────────────────────────────────────────────────────── */
-  const uniqueFieldsList = useMemo(() => {
-    const fieldMap = new Map() // name -> count
-    sortedPublications.forEach(pub => {
-      const fields = toList(pub.field)
-      fields.forEach(f => {
-        const clean = f.trim()
-        if (clean && clean !== '-' && clean.toLowerCase() !== 'null') {
-          fieldMap.set(clean, (fieldMap.get(clean) || 0) + 1)
+    fetchPublicPublicationsOverview({
+      year: selectedYearId,
+      field: selectedFieldName
+    })
+      .then(res => {
+        if (mounted && res) {
+          setOverviewData(res)
         }
       })
-    })
+      .catch(err => {
+        console.error('Failed to load publications overview:', err)
+      })
+      .finally(() => {
+        if (mounted) setDataLoading(false)
+      })
 
-    if (fieldMap.size === 0) {
-      return BIDANG_FALLBACK.map(b => ({
-        name: b.name,
-        countAll: 0,
-        Icon: b.Icon
+    return () => { mounted = false }
+  }, [open, selectedYearId, selectedFieldName])
+
+  /* ── 1. Hamparan titik dari server (fallback ke publications prop) ── */
+  const hamparan = useMemo(() => {
+    return overviewData?.hamparan || []
+  }, [overviewData?.hamparan])
+
+  const totalPubs = overviewData?.total_publications ?? publications.length
+
+  /* ── 2. Ekstrak daftar bidang ── */
+  const uniqueFieldsList = useMemo(() => {
+    if (overviewData?.fields && overviewData.fields.length > 0) {
+      return overviewData.fields.map(f => ({
+        name: f.name,
+        countAll: f.count,
+        Icon: getFieldIcon(f.name)
       }))
     }
+    return BIDANG_FALLBACK.map(b => ({
+      name: b.name,
+      countAll: 0,
+      Icon: b.Icon
+    }))
+  }, [overviewData?.fields])
 
-    return Array.from(fieldMap.entries())
-      .map(([name, countAll]) => ({
-        name,
-        countAll,
-        Icon: getFieldIcon(name)
-      }))
-      .sort((a, b) => b.countAll - a.countAll)
-  }, [sortedPublications])
-
-  /* ─────────────────────────────────────────────────────────
-     2.5. TAHUN TERBAWAH DARI DATA & TAHUN PATOKAN AKTIF
-  ───────────────────────────────────────────────────────── */
-  const minYear = useMemo(() => {
-    let min = null
-    sortedPublications.forEach(pub => {
-      const y = Number(pub.year)
-      if (!isNaN(y) && y > 1900 && y < 2035) {
-        if (min === null || y < min) min = y
-      }
-    })
-    return min || 2022
-  }, [sortedPublications])
-
-  // Tahun patokan 'sejak': jika filter tahun dipilih, pakai tahun tersebut; jika ALL, pakai tahun terbawah dari data
-  const activeSinceYear = useMemo(() => {
-    if (selectedYearId && selectedYearId !== 'ALL') {
-      const parsed = Number(selectedYearId)
-      if (!isNaN(parsed)) return parsed
-    }
-    return minYear
-  }, [selectedYearId, minYear])
-
-  // Bidang yang aktif dipilih (default 'ALL' = tampilkan semua tanpa filter)
+  /* ── 3. Bidang aktif terpilih ── */
   const selectedField = useMemo(() => {
     if (!selectedFieldName || selectedFieldName === 'ALL') {
       return {
         name: 'Semua Bidang Riset',
         id: 'ALL',
-        countAll: sortedPublications.length,
+        countAll: totalPubs,
         Icon: Layers
       }
     }
     const found = uniqueFieldsList.find(f => f.name.toLowerCase() === selectedFieldName.toLowerCase())
     return found || {
-      name: 'Semua Bidang Riset',
-      id: 'ALL',
-      countAll: sortedPublications.length,
-      Icon: Layers
+      name: selectedFieldName,
+      id: selectedFieldName,
+      countAll: overviewData?.count_all_years ?? 0,
+      Icon: getFieldIcon(selectedFieldName)
     }
-  }, [uniqueFieldsList, selectedFieldName, sortedPublications.length])
+  }, [uniqueFieldsList, selectedFieldName, totalPubs, overviewData?.count_all_years])
 
-  /* ─────────────────────────────────────────────────────────
-     3. FILTER PUBLIKASI PADA BIDANG AKTIF
-  ───────────────────────────────────────────────────────── */
-  const fieldPubs = useMemo(() => {
-    if (!selectedField || selectedField.id === 'ALL' || selectedFieldName === 'ALL') return sortedPublications
-    const target = selectedField.name.toLowerCase()
-    return sortedPublications.filter(pub => {
-      const fields = toList(pub.field)
-      return fields.some(f => f.trim().toLowerCase() === target)
-    })
-  }, [sortedPublications, selectedField, selectedFieldName])
+  /* ── 4. Tahun patokan aktif & jumlah publikasi ── */
+  const minYear = overviewData?.min_year ?? 2022
+  const activeSinceYear = overviewData?.since_year ?? (selectedYearId !== 'ALL' ? Number(selectedYearId) : minYear)
+  const countSinceActiveYear = overviewData?.count_since_year ?? 0
+  const countAllYears = overviewData?.count_all_years ?? totalPubs
 
-  // Hitung jumlah publikasi pada bidang aktif sejak tahun patokan (activeSinceYear)
-  const countSinceActiveYear = useMemo(() => {
-    let count = 0
-    fieldPubs.forEach(pub => {
-      const y = Number(pub.year)
-      if (!isNaN(y) && y >= activeSinceYear) {
-        count++
-      }
-    })
-    return count
-  }, [fieldPubs, activeSinceYear])
-
-  /* ─────────────────────────────────────────────────────────
-     4. HITUNG PUSAT RISET TERBANYAK (TOP 3 TERATAS UNIQUE)
-  ───────────────────────────────────────────────────────── */
+  /* ── 5. Top 3 Satker ── */
   const top3Centers = useMemo(() => {
-    const centerCounts = new Map() // name -> count
+    return overviewData?.top_satker || []
+  }, [overviewData?.top_satker])
 
-    // Hitung kemunculan pusat riset pada publikasi di bidang ini
-    fieldPubs.forEach(pub => {
-      const centers = toList(pub.research_center)
-      centers.forEach(c => {
-        const clean = c.trim()
-        if (clean && clean !== '-' && clean.toLowerCase() !== 'null' && clean.toLowerCase() !== 'none') {
-          centerCounts.set(clean, (centerCounts.get(clean) || 0) + 1)
-        }
-      })
-    })
-
-    // Jika di bidang ini belum ada satker terpetakan, hitung dari seluruh publikasi sebagai referensi
-    const sourceMap = centerCounts.size > 0 ? centerCounts : (() => {
-      const allCounts = new Map()
-      sortedPublications.forEach(pub => {
-        toList(pub.research_center).forEach(c => {
-          const clean = c.trim()
-          if (clean && clean !== '-' && clean.toLowerCase() !== 'null') {
-            allCounts.set(clean, (allCounts.get(clean) || 0) + 1)
-          }
-        })
-      })
-      return allCounts
-    })()
-
-    return Array.from(sourceMap.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3)
-  }, [fieldPubs, sortedPublications])
-
-  /* ─────────────────────────────────────────────────────────
-     5. STATISTIK UMUM & YEAR TILES
-  ───────────────────────────────────────────────────────── */
+  /* ── 6. Statistik Global & Year Tiles ── */
   const globalStats = useMemo(() => {
-    const authorSet = new Set()
-    const centerSet = new Set()
-    const yearCounts = {}
-
-    sortedPublications.forEach(pub => {
-      toList(pub.brin_author).forEach(a => authorSet.add(a))
-      toList(pub.research_center).forEach(c => {
-        const clean = c.trim()
-        if (clean && clean !== '-') centerSet.add(clean)
-      })
-      if (pub.year) {
-        const y = String(pub.year)
-        yearCounts[y] = (yearCounts[y] || 0) + 1
-      }
-    })
-
-    const sortedYearsAsc = Object.keys(yearCounts)
-      .map(Number)
-      .filter(n => !isNaN(n) && n > 1990 && n < 2035)
-      .sort((a, b) => a - b)
-
-    const sortedYearsDesc = [...sortedYearsAsc].reverse()
+    const totalAuthors = overviewData?.total_researchers ?? 0
+    const totalCenters = overviewData?.total_research_centers ?? 0
+    const trends = overviewData?.yearly_trend || []
+    const sortedDesc = [...trends].reverse()
 
     const yearTiles = [
       {
         id: 'ALL',
         label: 'Semua tahun',
-        count: `${sortedPublications.length.toLocaleString('id-ID')} publikasi`,
+        count: `${totalPubs.toLocaleString('id-ID')} publikasi`,
       },
-      ...sortedYearsDesc.slice(0, 7).map(yr => ({
-        id: String(yr),
-        label: String(yr),
-        count: `${(yearCounts[String(yr)] || 0).toLocaleString('id-ID')} publikasi`,
+      ...sortedDesc.slice(0, 7).map(item => ({
+        id: String(item.year),
+        label: String(item.year),
+        count: `${item.count.toLocaleString('id-ID')} publikasi`,
       }))
     ]
 
     return {
-      totalPubs: sortedPublications.length,
-      totalAuthors: authorSet.size,
-      totalCenters: centerSet.size,
-      yearTiles,
-      yearCounts
+      totalPubs,
+      totalAuthors,
+      totalCenters,
+      yearTiles
     }
-  }, [sortedPublications])
+  }, [overviewData, totalPubs])
 
-  /* ─────────────────────────────────────────────────────────
-     6. JEJAK TAHUNAN UNTUK BAR CHART BIDANG AKTIF
-  ───────────────────────────────────────────────────────── */
+  /* ── 7. Jejak Tahunan untuk Bar Chart ── */
   const yearlyTrend = useMemo(() => {
-    const counts = {}
-    fieldPubs.forEach(pub => {
-      if (pub.year) {
-        const yr = String(pub.year)
-        counts[yr] = (counts[yr] || 0) + 1
-      }
-    })
-
-    const sortedYears = Object.keys(counts).map(Number).filter(Boolean).sort((a, b) => a - b)
-    const chartYears = sortedYears.length > 0
-      ? sortedYears.slice(-8)
-      : [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-
-    return chartYears.map(yr => ({
-      year: String(yr),
-      count: counts[String(yr)] || 0
-    }))
-  }, [fieldPubs])
+    return overviewData?.yearly_trend || []
+  }, [overviewData?.yearly_trend])
 
   const maxYearlyCount = useMemo(() => {
     const counts = yearlyTrend.map(y => y.count)
     return Math.max(...counts, 10)
   }, [yearlyTrend])
 
-  /* ─────────────────────────────────────────────────────────
-     7. STRUKTUR GRID KANVAS TITIK (1 TITIK = 1 PUBLIKASI)
-  ───────────────────────────────────────────────────────── */
+  /* ── 8. Struktur Grid Kanvas Titik ── */
   const gridInfo = useMemo(() => {
-    const N = sortedPublications.length
+    const N = hamparan.length || totalPubs
     const width = 600
     const height = 300
     if (N === 0) {
@@ -352,11 +243,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     const offsetY = (cellHeight - dotSize) / 2
 
     return { cols, rows, cellWidth, cellHeight, dotSize, offsetX, offsetY, N }
-  }, [sortedPublications.length])
+  }, [hamparan.length, totalPubs])
 
-  /* ─────────────────────────────────────────────────────────
-     8. RENDER TITIK PADA KANVAS
-  ───────────────────────────────────────────────────────── */
+  /* ── 9. Render Titik pada Kanvas (Super Cepat 60 FPS) ── */
   useEffect(() => {
     if (!open) return
     const canvas = canvasRef.current || canvasNode
@@ -372,51 +261,34 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     ctx.scale(dpr, dpr)
     ctx.clearRect(0, 0, width, height)
 
-    const N = sortedPublications.length
+    const N = hamparan.length
     if (N === 0) {
       ctx.fillStyle = '#a1a1aa'
       ctx.font = '12px Segoe UI, sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('Belum ada data publikasi di tabel.', width / 2, height / 2)
+      ctx.fillText(dataLoading ? 'Memuat hamparan sebaran riset BRIN...' : 'Belum ada data publikasi di database.', width / 2, height / 2)
       return
     }
 
     const { cols, cellWidth, cellHeight, dotSize, offsetX, offsetY } = gridInfo
-    const isAllField = !selectedField || selectedField.id === 'ALL' || selectedFieldName === 'ALL'
-    const isAllYear = selectedYearId === 'ALL'
-    const activeFieldName = !isAllField && selectedField.name ? selectedField.name.toLowerCase() : ''
 
     for (let i = 0; i < N; i++) {
-      const pub = sortedPublications[i]
+      const dot = hamparan[i]
       const col = i % cols
       const row = Math.floor(i / cols)
       const x = col * cellWidth + offsetX
       const y = row * cellHeight + offsetY
 
-      // Optimasi drastis: jika Semua Bidang atau Semua Tahun, hindari parsing string ribuan kali
-      const isFieldMatch = isAllField ? true : toList(pub.field).some(f => f.trim().toLowerCase() === activeFieldName)
-      const isYearMatch = isAllYear ? true : (pub.year && String(pub.year) === selectedYearId)
-
-      if (isFieldMatch && isYearMatch) {
-        ctx.fillStyle = '#2563eb' // Biru pekat aktif
-      } else if (isFieldMatch && !isYearMatch) {
-        ctx.fillStyle = isAllField ? '#cbd5e1' : '#93c5fd' // Dimmed jika All, atau biru muda jika bidang tertentu
-      } else if (!isFieldMatch && isYearMatch) {
-        ctx.fillStyle = '#cbd5e1' // Abu-abu kebiruan
-      } else {
-        ctx.fillStyle = '#e4e4e7' // Abu-abu netral
-      }
-
+      ctx.fillStyle = dot.is_active ? '#2563eb' : '#e4e4e7'
       ctx.fillRect(x, y, dotSize, dotSize)
     }
-  }, [open, canvasNode, renderTick, sortedPublications, gridInfo, selectedField, selectedFieldName, selectedYearId])
+  }, [open, canvasNode, renderTick, hamparan, gridInfo, dataLoading])
 
-  /* ─────────────────────────────────────────────────────────
-     9. HOVER MOUSE HANDLER
-  ───────────────────────────────────────────────────────── */
+  /* ── 10. Hover Mouse Handler ── */
   const handleCanvasMouseMove = (e) => {
     const canvas = canvasRef.current
-    if (!canvas || sortedPublications.length === 0) return
+    const N = hamparan.length
+    if (!canvas || N === 0) return
     const rect = canvas.getBoundingClientRect()
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
@@ -429,8 +301,8 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
     const row = Math.floor(canvasY / gridInfo.cellHeight)
     const idx = row * gridInfo.cols + col
 
-    if (idx >= 0 && idx < sortedPublications.length) {
-      setHoveredPub(sortedPublications[idx])
+    if (idx >= 0 && idx < N) {
+      setHoveredPub(hamparan[idx])
       setTooltipPos({ x: mouseX, y: mouseY })
     } else {
       setHoveredPub(null)
@@ -463,9 +335,9 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
             Setiap titik, sebuah pengetahuan.
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {sortedPublications.length > 0
-              ? `${sortedPublications.length.toLocaleString('id-ID')} titik publikasi diurutkan dari ID publikasi terkecil. Arahkan kursor ke titik untuk melihat detailnya.`
-              : 'Belum ada data publikasi di database.'}
+            {totalPubs > 0
+              ? `${totalPubs.toLocaleString('id-ID')} titik publikasi diurutkan dari ID publikasi terkecil. Arahkan kursor ke titik untuk melihat detailnya.`
+              : (dataLoading ? 'Memuat data publikasi...' : 'Belum ada data publikasi di database.')}
           </p>
         </div>
 
@@ -520,7 +392,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
                   Hamparan Sebaran Publikasi
                 </h3>
                 <div className="text-[10px] text-zinc-400 font-mono">
-                  {sortedPublications.length.toLocaleString('id-ID')} Titik (Sort by ID Publikasi)
+                  {totalPubs.toLocaleString('id-ID')} Titik (Sort by ID Publikasi)
                 </div>
               </div>
               <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center gap-2">
@@ -559,20 +431,16 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
                   className="absolute z-20 pointer-events-none p-2.5 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 text-white shadow-xl border border-zinc-700 text-[10px] max-w-[280px] backdrop-blur-xs transition-opacity"
                 >
                   <div className="flex items-center gap-1.5 font-mono text-blue-300 font-bold">
-                    <span>{hoveredPub.publication_id || 'ID -'}</span>
-                    {hoveredPub.year && <span>• Tahun {hoveredPub.year}</span>}
+                    <span>{hoveredPub.id_publication || hoveredPub.publication_id || 'ID -'}</span>
+                    {hoveredPub.is_active !== undefined && (
+                      <span className={hoveredPub.is_active ? 'text-emerald-400 font-semibold' : 'text-zinc-400'}>
+                        {hoveredPub.is_active ? '• Aktif Terpilih' : '• Di Luar Filter'}
+                      </span>
+                    )}
                   </div>
-                  <div className="font-semibold line-clamp-2 text-zinc-100 mt-0.5 leading-snug">
-                    {hoveredPub.title}
-                  </div>
-                  {toList(hoveredPub.brin_author).length > 0 && (
-                    <div className="text-zinc-400 truncate mt-1">
-                      ✍️ {toList(hoveredPub.brin_author).slice(0, 2).join('; ')}
-                    </div>
-                  )}
-                  {toList(hoveredPub.research_center).length > 0 && (
-                    <div className="text-zinc-400 truncate mt-0.5 text-[9px]">
-                      🏢 {toList(hoveredPub.research_center)[0]}
+                  {hoveredPub.title && (
+                    <div className="font-semibold line-clamp-2 text-zinc-100 mt-0.5 leading-snug">
+                      {hoveredPub.title}
                     </div>
                   )}
                 </div>
@@ -644,7 +512,7 @@ export default function ResearchOverviewModal({ open, onClose, publications = []
                 </div>
                 <div>
                   <span className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">
-                    {fieldPubs.length.toLocaleString('id-ID')}
+                    {countAllYears.toLocaleString('id-ID')}
                   </span>
                   <span className="block text-[10px] text-zinc-400">
                     Publikasi seluruh tahun

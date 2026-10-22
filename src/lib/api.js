@@ -267,7 +267,42 @@ export async function fetchPublications({ year = null, source = null, coverage =
   return request(url);
 }
 
-// Fetch ALL publications for sekilas modal (no pagination limit)
+// 📰 5. PUBLICATIONS CRUD
+export async function fetchPublicationsPaginated({ page = 1, pageSize = 100, search = '', year = 'ALL', field = 'ALL' } = {}) {
+  const params = new URLSearchParams();
+  params.append('page', String(page));
+  params.append('pageSize', String(pageSize));
+  params.append('paginated', 'true');
+  if (search && search.trim()) params.append('search', search.trim());
+  if (year && year !== 'ALL') params.append('year', String(year));
+  if (field && field !== 'ALL') params.append('field', String(field));
+
+  return request(`${API_BASE}/admin/publications?${params.toString()}`);
+}
+
+export async function fetchPublicationFilterOptions() {
+  return request(`${API_BASE}/admin/publications/filter-options`);
+}
+
+export async function fetchPublicPublicationsOverview({ year = 'ALL', field = 'ALL' } = {}) {
+  const params = new URLSearchParams();
+  if (year && year !== 'ALL') params.append('year', String(year));
+  if (field && field !== 'ALL') params.append('field', String(field));
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || (API_BASE.replace(/\/api\/v1\/?$/, ''));
+  try {
+    const res = await fetch(`${backendUrl}/publications${query}`);
+    if (res.ok) return res.json();
+  } catch (_) {}
+  
+  // Fallback to API_BASE route
+  const res2 = await fetch(`${API_BASE}/publications${query}`);
+  if (!res2.ok) throw new Error('Gagal memuat overview publikasi');
+  return res2.json();
+}
+
+// Fetch ALL publications (kept for fallback / export if needed)
 export async function fetchAllPublications() {
   return request(`${API_BASE}/admin/publications?limit=100000&offset=0`);
 }
